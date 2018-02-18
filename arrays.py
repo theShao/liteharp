@@ -2,7 +2,7 @@ from __future__ import print_function
 
 import numpy as np
 import sc
-import neopixel, lighttools, lidars, synths
+import neopixel, lighttools, lidars, synths, programs
 import time
 
 
@@ -25,13 +25,14 @@ PIXELS_PER_MM = LED_PER_TUBE/float(TUBE_LENGTH)
 # Constraints
 MIN_DIST = 300 # Sensor limitations
 MAX_DIST = 1170 # Physical limitations
-
+'''
 # Sound properties
 ROOT_FREQ = 220
 SCALE = [0, 2, 3, 5, 7, 8, 10, 12]  # natural minor
 FREQS = [ROOT_FREQ if n == 0
          else int(round(ROOT_FREQ * (2**(1./12))**n))  # Note is equal to (root note * (2^12)^(semitone steps from root note) )
          for n in SCALE]
+'''
 VOLUME = 0.5 # Passed to scsynth, 0 -> 1
 
 
@@ -39,7 +40,6 @@ VOLUME = 0.5 # Passed to scsynth, 0 -> 1
 current_colours = np.tile(lighttools.BLACK, (TUBE_COUNT, LED_PER_TUBE, 1)) # col, row, rgb
 base_colours = np.tile(np.array(lighttools.sinebow(LED_PER_TUBE)), (TUBE_COUNT, 1, 1)) # Default colour for each pixel
 
-print(base_colours)
 # INIT
 
 # Sensor setup
@@ -53,29 +53,42 @@ strip.begin()
 
 # Supercolider setup
 sc.start( verbose=1, spew=1)
-mysynths = []
-for s in range(TUBE_COUNT):
-   mysynths.append(synths.syn_Lead(FREQS[s]))
 
-print("Synths started")
-#time.sleep(5)
-print("Starting tracking...")
+# Program initialisation
 
+myprograms = []
+myprograms.append(programs.prog_Basic(TUBE_COUNT, LED_PER_TUBE))
+
+current_colours = myprograms[0].update([0,0,0,0,0,0,0,0])
+
+print("Program started")
     
-def updatepixels():
+def updatepixels(colours):
     pixels = current_colours.reshape(-1, 3) # Flatten
     #print(pixels)
     for i, pixel in enumerate(pixels):
         strip.setPixelColor(i, lighttools.np_array_to_colour(pixel))
     strip.show()
 
-base_colours /= 2
-current_colours = base_colours.copy()
+#base_colours /= 2
+#current_colours = base_colours.copy()
 print("Setting startup colours:")
 print(current_colours)
-updatepixels()
+updatepixels(current_colours)
 
 while True:
+    distances = []
+    for tube in range(TUBE_COUNT):        
+        distance = lidars.get_distance(tube) # Get distance in mm
+        if MIN_DIST < distance < MAX_DIST:
+            pixel_dist = int(distance * PIXELS_PER_MM)
+        else:
+            pixel_dist = 0
+        distances.append(pixel_dist)
+    current_colours = myprograms[0].update(distances)
+    updatepixels(current_colours)
+    time.sleep(0.01)
+    '''
     # Decay
     current_colours = lighttools.fade(current_colours, base_colours, 10)    
     
@@ -103,9 +116,9 @@ while True:
         else:
             if controller.playing:
                 controller.stop()
-    updatepixels()
+    updatepixels(current_colours)
     time.sleep(0.01)
-            
+    '''        
         
 """
 while True:

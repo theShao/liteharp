@@ -23,8 +23,8 @@ class syn_Moog():
         self.playing = False
     
     def modulate(self, value): # Input range 0 - 1000
-        self.synth.cutoff = value * 2 + self.min
-        self.synth.chorus = value/250.
+        self.synth.cutoff = value * 20 + self.min
+        self.synth.chorus = value/25.
         
     def start(self):
         self.synth.run()
