@@ -34,12 +34,6 @@ FREQS = [ROOT_FREQ if n == 0
          for n in SCALE]
 VOLUME = 0.5 # Passed to scsynth, 0 -> 1
 
-# Colours
-GREEN = [255, 0, 0]
-RED = [0, 255, 0]
-BLUE = [0, 0, 255]
-WHITE = [255, 255, 255]
-BLACK = [0, 0, 0]
 
 # Pixel arrays
 current_colours = np.tile(BLACK, (TUBE_COUNT, LED_PER_TUBE, 1)) # col, row, rgb
@@ -67,35 +61,14 @@ print("Synths started")
 #time.sleep(5)
 print("Starting tracking...")
 
-def array_to_colour(array):
-    '''
-    Takes a 3-element numpy array and returns a 24-bit colour as a zero-padded 32-bit int
-    '''
-    array = array.clip(0, 255, out=array).astype(np.uint8)
-    return(array[0] << 16 | array[1] << 8 | array[2])
     
 def updatepixels():
     pixels = current_colours.reshape(-1, 3) # Flatten
     #print(pixels)
     for i, pixel in enumerate(pixels):
-        strip.setPixelColor(i, array_to_colour(pixel))
+        strip.setPixelColor(i, lighttools.np_array_to_colour(pixel))
     strip.show()
 
-def fade(colours, target_colours = BLACK, rate = 1):
-    diffs = target_colours - colours
-    change = (diffs * rate) #.astype(np.uint8)
-    return colours + change
-
-'''
-current_colours[0, 20] = RED
-morph = np.array([2.55, -2.55, 2.55])
-updatepixels()
-for i in range(100):
-    current_colours[0, 20] += morph
-    #print(current_colours[0, 20])
-    updatepixels()
-    time.sleep(0.01)
-'''
 base_colours /= 2
 current_colours = base_colours.copy()
 print("Setting startup colours:")
@@ -104,7 +77,7 @@ updatepixels()
 
 while True:
     # Decay
-    current_colours = fade(current_colours, base_colours, 0.1)    
+    current_colours = lighttools.fade(current_colours, base_colours, 10)    
     
     for tube in range(TUBE_COUNT):        
         distance = lidars.get_distance(tube) # Get distance in mm
@@ -120,8 +93,8 @@ while True:
             current_colours[tube, pixel_dist] = WHITE #255 - base_colours[tube, pixel_dist]
             # And a couple either side for extra brightness
             for i in range(2):
-                    current_colours[tube, min(pixel_dist + i, LED_PER_TUBE - 1)] = WHITE #255 - base_colours[tube, pixel_dist]
-                    current_colours[tube, max(pixel_dist - i, 0)] = WHITE #255 - base_colours[tube, pixel_dist]
+                    current_colours[tube, min(pixel_dist + i, LED_PER_TUBE - 1)] = lighttools.WHITE #255 - base_colours[tube, pixel_dist]
+                    current_colours[tube, max(pixel_dist - i, 0)] = lighttools.WHITE #255 - base_colours[tube, pixel_dist]
             
             # Set modulation and ensure sound playing
             controller.modulate(distance) # Modulate the synth that's currently playing
@@ -134,7 +107,7 @@ while True:
     time.sleep(0.01)
             
         
-
+"""
 while True:
     for i in range(PIXEL_COUNT - 1):
         # Decay
@@ -177,3 +150,4 @@ while True:
         current_colours[0, i] = 255 - current_colours[0, i]
         updatepixels()
         time.sleep(0.05)        
+"""

@@ -11,12 +11,12 @@ import random
 
 REVERSED = True
 
-BLACK = Color(0, 0, 0)
-WHITE = Color(255, 255, 255)
-RED = Color(255, 0, 0)
-
-BLACK_RGB = (0, 0, 0)
-WHITE_RGB = (255, 255, 255)
+# Colours
+GREEN = [255, 0, 0]
+RED = [0, 255, 0]
+BLUE = [0, 0, 255]
+WHITE = [255, 255, 255]
+BLACK = [0, 0, 0]
 
 def wheel(position, n = 255):
     """Generate rainbow colors across n positions. Returns (R, G, B) tuple"""
@@ -111,9 +111,6 @@ class sarahs_colours:
         # Returns a numpy array [r, g, b]
         return self.rgbs[int(i * 144/self.n)]
 
-# def colour_blender(colours, numpixels):
-    # Map the 
-
 def whitelight(strip, mags):
     for i in range(len(strip.numPixels())):
         strip.setPixelColor(i, Color(mags[i], mags[i], mags[i]))
@@ -129,6 +126,25 @@ def arrayToColour(array):
     # Input should be scaled to 0-255
     r, g, b = int(array[0]), int(array[1]), int(array[2])
     return Color(r, g, b)
+
+def np_array_to_colour(array):
+    '''
+    Takes a 3-element numpy array and returns a 24-bit colour as a zero-padded 32-bit int
+    '''
+    array = array.clip(0, 255, out=array).astype(np.uint8) # Fix colours outside range. This limits rather than wrapping
+    return(array[0] << 16 | array[1] << 8 | array[2])
+
+def fade(colours, target_colours = BLACK, rate = 1):
+    '''
+    Fade from one numpy array of pixel colours to another
+    colours: 2-d numpy array of RGB values
+    target_colours: 2-d numpy array of RGB values
+    rate: number of steps over which to make the change
+    Note that rate is relative; calling face(x, y, 0.5) repeatedly will fade exponentially 
+    '''
+    diffs = target_colours - colours
+    change = (diffs / rate) #.astype(np.uint8)
+    return colours + change
     
 def test(strip):
     rands = [[random.randint(0, 255), random.randint(0, 255), random.randint(0, 255)]
