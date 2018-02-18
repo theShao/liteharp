@@ -36,7 +36,7 @@ VOLUME = 0.5 # Passed to scsynth, 0 -> 1
 
 
 # Pixel arrays
-current_colours = np.tile(BLACK, (TUBE_COUNT, LED_PER_TUBE, 1)) # col, row, rgb
+current_colours = np.tile(lighttools.BLACK, (TUBE_COUNT, LED_PER_TUBE, 1)) # col, row, rgb
 base_colours = np.tile(np.array(lighttools.sinebow(LED_PER_TUBE)), (TUBE_COUNT, 1, 1)) # Default colour for each pixel
 
 print(base_colours)
@@ -90,7 +90,7 @@ while True:
             pixel_dist = int(distance * PIXELS_PER_MM)
 
             # Light up the pixel at the detected position
-            current_colours[tube, pixel_dist] = WHITE #255 - base_colours[tube, pixel_dist]
+            current_colours[tube, pixel_dist] = lighttools.WHITE #255 - base_colours[tube, pixel_dist]
             # And a couple either side for extra brightness
             for i in range(2):
                     current_colours[tube, min(pixel_dist + i, LED_PER_TUBE - 1)] = lighttools.WHITE #255 - base_colours[tube, pixel_dist]
