@@ -40,14 +40,14 @@ def get_reading(portnumber):
                 low = ord(data[0])
                 high = ord(data[1])
                 distance = (high << 8) + low
-                low = ord(data[2])
-                high = ord(data[3])
-                strength = (high << 8) + low
-                reserved = ord(data[4])
-                quality = ord(data[5])
-                checksum = ord(data[6])
+                #low = ord(data[2])
+                #high = ord(data[3])
+                #strength = (high << 8) + low
+                #reserved = ord(data[4])
+                #quality = ord(data[5])
+                #checksum = ord(data[6])
                 #distance = (distance if (portnumber == 1) or (portnumber == 5)  else distance * 10)
-                return distance, strength, quality, reserved
+                return distance, 0, 0, 0 #strength, quality, reserved
             else: # Probably somewhere other than the start of a block.
                 last = curr
                 tries += 1

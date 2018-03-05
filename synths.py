@@ -17,14 +17,14 @@ class syn_Moog():
         synth.rel = 2 #
         #synth.att = 2
         synth.chorus = 0
-        synth.gate = 0        
+        synth.gate = 0
         synth.freq = freq    
         self.synth = synth        
         self.playing = False
     
     def modulate(self, value): # Input range 0 - 1000
         self.synth.cutoff = value * 40 + self.min
-        self.synth.chorus = value/12.
+        self.synth.chorus = value/24.
         
     def start(self):
         self.synth.run()
@@ -140,24 +140,33 @@ class syn_Organdonor():
     def __init__(self, freq):
         path = "organdonor"
         synth = sc.Synth(path, 3000 + freq)
-        synth.sus = 0.9
-        synth.rls = 2
-        synth.amp = 0.3
-        synth.lforate = 10
-        synth.lfowidth = 0.01
-        synth.gate = 0        
+        synth.amp = 0.7
+        synth.lforate = 1
+        synth.lfowidth = 0
+        synth.cutoff = 6000
+        synth.gate = 0
+        synth.run(1)
+        synth.rq = 0.1
+        synth.rel = 1
         synth.freq = freq # * 2    
         self.synth = synth        
         self.playing = False
     
     def modulate(self, value): # Input range 0 - 1000
-        self.synth.lforate = value/10
-        self.synth.lfowidth = value/1000000
+        self.synth.lforate = (value/8.)
+        self.synth.lfowidth = value/10000.
+        self.synth.cutoff = value * 50.
         
     def start(self):
+        self.synth.run(1)
         self.synth.gate = 1
         self.playing = True
         
     def stop(self):
         self.synth.gate = 0
+        #self.synth.run(0)
         self.playing = False
+    
+    def end(self):
+        self.synth.run(0)
+        

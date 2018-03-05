@@ -152,6 +152,7 @@ def np_array_to_colour(array):
     Takes a 3-element numpy array and returns a 24-bit colour as a zero-padded 32-bit int
     '''
     array = array.clip(0, 255, out=array).astype(np.uint8) # Fix colours outside range. This limits rather than wrapping
+    #return(array[0] << 16 | array[1] << 8 | array[2])
     return(LED_GAMMA[array[0]] << 16 | LED_GAMMA[array[1]] << 8 | LED_GAMMA[array[2]])
 
 def fade(colours, target_colours = BLACK, rate = 1):
