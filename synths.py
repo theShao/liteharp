@@ -1,4 +1,13 @@
 import sc, time
+from rtmidi.midiutil import open_midioutput
+from rtmidi.midiconstants import NOTE_OFF, NOTE_ON, CONTROL_CHANGE, PROGRAM_CHANGE
+
+print("Setting up midi")
+try:
+    global midiout, port_name
+    midiout, port_name = open_midioutput(1, 1)
+except (EOFError, KeyboardInterrupt):
+    sys.exit()
 
 class syn_Moog():    
     # moogbass synthdef from Steal this Sound
@@ -64,8 +73,6 @@ class syn_Lead():
     def stop(self):
         self.synth.gate = 0
         self.playing = False
-
-        
 
 class syn_AM():    
     # moogbass synthdef from Steal this Sound
@@ -169,4 +176,32 @@ class syn_Organdonor():
     
     def end(self):
         self.synth.run(0)
+     
+class syn_Midi():
+    
+    def __init__(self, channel, note):
+        self.channel = channel
+        self.note = note
         
+        midiout.send_message([PROGRAM_CHANGE + channel, 2])
+        
+        self.note_on = [NOTE_ON + channel, note, 112]  # channel 1, middle C, velocity 112
+        self.note_off = [NOTE_OFF + channel, note, 0]        
+        self.playing = False
+    
+    def modulate(self, value): # Input range 0 - 1000
+        modulate = [CONTROL_CHANGE  + self.channel, 1, value * 2]
+        print(modulate)
+        midiout.send_message(modulate)
+        
+    def start(self):
+        print(self.note_on)
+        midiout.send_message(self.note_on)
+        self.playing = True
+        
+    def stop(self):
+        midiout.send_message(self.note_off)
+        self.playing = False
+    
+    def end(self):
+        pass   

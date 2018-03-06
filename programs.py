@@ -12,6 +12,47 @@ import synths, lighttools
 import random
 import numpy as np
 
+class test_Midi:
+    mysynths = []
+    # Sound properties
+    def __init__(self, tube_count, led_per_tube):
+        self.tubelength = led_per_tube        
+        self.base_colours = np.tile(np.array(lighttools.sinebow(led_per_tube))/1.5, (tube_count, 1, 1)) # Default colour for each pixel
+        #self.base_colours /= 2 # Soften the colours a bit.
+        self.current_colours = self.base_colours.copy() # Initial colours match base colours
+        self.mysynths = []
+        
+        for s in range(tube_count):
+            # Add a synth for each tube at the correct freq
+            self.mysynths.append(synths.syn_Midi(0, 60))
+    
+    def update(self, distances):
+        # Decay
+        self.current_colours = lighttools.fade(self.current_colours, self.base_colours, 10)
+        
+        for tube, distance in enumerate(distances):
+            controller = self.mysynths[tube]
+            if distance > 0:           
+                # Update pixels
+                #
+                # Light up the pixel at the detected position
+                self.current_colours[tube, distance] = lighttools.WHITE #255 - base_colours[tube, pixel_dist]
+                # And a couple either side for extra brightness
+                for i in range(2):
+                        self.current_colours[tube, min(distance + i, self.tubelength - 1)] = lighttools.WHITE #255 - base_colours[tube, pixel_dist]
+                        self.current_colours[tube, max(distance - i, 0)] = lighttools.WHITE #255 - base_colours[tube, pixel_dist]
+                
+                # Update synths
+                #
+                # Set modulation and ensure sound playing
+                controller.modulate(distance)
+                if not controller.playing:
+                    controller.start()
+            else:
+                if controller.playing:
+                    controller.stop()                
+        return self.current_colours
+
 class prog_Basic:
     
     mysynths = []
@@ -112,7 +153,6 @@ class prog_Fire:
                 if controller.playing:
                     controller.stop()                
         return self.current_colours
-        
         
 class prog_Sarah:
     #COLOURS = [[114, 238, 88], [151, 250, 119], [197, 250, 143], [223, 255, 210], [189, 217, 214], [195, 210, 254], [95, 132, 198], [67, 89, 168]]
