@@ -5,6 +5,8 @@ Some functions taken from the ws281x library.
 TODO: Either modify neopixels.py or make this a complete wrapper for it
 """
 
+# Frame Rate = 800000 / 24 / Number of LEDs
+
 from neopixel import Color
 import numpy as np
 import random
@@ -64,7 +66,7 @@ def wheel_RGB(position, n = 255):
         position -= 170
         return np.array([0, position*3, 255 - position*3])
 
-def sinebow(count = 100):
+def sinebow(count = 100, brightness = 255):
     out = []
     step = 1./count
     for i in np.arange(0.0, 1.0, step):
@@ -73,7 +75,7 @@ def sinebow(count = 100):
         g = np.sin(np.pi * i)
         r = np.sin(np.pi * (i + 1./3))
         b = np.sin(np.pi * (i + 2./3))        
-        out.append([int(255*chan**2) for chan in (r, g, b)])
+        out.append([int(brightness*chan**2) for chan in (r, g, b)])
     return(out)
 
 class sarahs_colours:
@@ -161,7 +163,7 @@ def fade(colours, target_colours = BLACK, rate = 1):
     colours: 2-d numpy array of RGB values
     target_colours: 2-d numpy array of RGB values
     rate: number of steps over which to make the change
-    Note that rate is relative; calling face(x, y, 0.5) repeatedly will fade exponentially 
+    Note that rate is relative; calling fade(x, y, 0.5) repeatedly will fade exponentially 
     '''
     diffs = target_colours - colours
     change = (diffs / rate) #.astype(np.uint8)

@@ -16,8 +16,8 @@ class test_Midi:
     mysynths = []
     # Sound properties
     def __init__(self, tube_count, led_per_tube):
-        self.tubelength = led_per_tube        
-        self.base_colours = np.tile(np.array(lighttools.sinebow(led_per_tube))/1.5, (tube_count, 1, 1)) # Default colour for each pixel
+        self.tubelength = led_per_tube
+        self.base_colours = np.tile(np.array(lighttools.sinebow(led_per_tube, 180)), (tube_count, 1, 1)) #.astype(np.uint8) # Default colour for each pixel        
         #self.base_colours /= 2 # Soften the colours a bit.
         self.current_colours = self.base_colours.copy() # Initial colours match base colours
         self.mysynths = []
@@ -29,10 +29,17 @@ class test_Midi:
     def update(self, distances):
         # Decay
         self.current_colours = lighttools.fade(self.current_colours, self.base_colours, 10)
-        
         for tube, distance in enumerate(distances):
             controller = self.mysynths[tube]
-            if distance > 0:           
+            if distance > 0:
+            
+                # Update synths
+                #
+                # Set modulation and ensure sound playing
+                controller.modulate(distance)
+                if not controller.playing:
+                    controller.start()            
+                
                 # Update pixels
                 #
                 # Light up the pixel at the detected position
@@ -41,16 +48,10 @@ class test_Midi:
                 for i in range(2):
                         self.current_colours[tube, min(distance + i, self.tubelength - 1)] = lighttools.WHITE #255 - base_colours[tube, pixel_dist]
                         self.current_colours[tube, max(distance - i, 0)] = lighttools.WHITE #255 - base_colours[tube, pixel_dist]
-                
-                # Update synths
-                #
-                # Set modulation and ensure sound playing
-                controller.modulate(distance)
-                if not controller.playing:
-                    controller.start()
+
             else:
                 if controller.playing:
-                    controller.stop()                
+                    controller.stop()
         return self.current_colours
 
 class prog_Basic:

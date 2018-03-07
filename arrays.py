@@ -52,7 +52,7 @@ def np_array_to_colour(array):
     '''
     Takes a 3-element numpy array and returns a 24-bit colour as a zero-padded 32-bit int
     '''
-    array = array.clip(0, 255, out=array).astype(np.uint8) # Fix colours outside range. This limits rather than wrapping
+    #array = array.clip(0, 255, out=array).astype(np.uint8) # Fix colours outside range. This limits rather than wrapping
     #return(array[0] << 16 | array[1] << 8 | array[2])
     colour = lighttools.LED_GAMMA[array[0]] << 16 | lighttools.LED_GAMMA[array[1]] << 8 | lighttools.LED_GAMMA[array[2]]
     return colour
@@ -72,7 +72,7 @@ print("Initializing programs")
 myprograms = [program(TUBE_COUNT, LED_PER_TUBE) 
             for name, program in inspect.getmembers(programs) 
             if inspect.isclass(program)
-            and name[:5] == "prog_"]
+            and name[:5] == "test_"]
 program_cycle = itertools.cycle(myprograms) # Loop through them forever
 current_program = next(program_cycle)
 
@@ -92,13 +92,26 @@ while True:
     
     # Main logic
     distances = []
-    for tube in range(TUBE_COUNT):        
-        distance = lidars.get_distance(tube) # Get distance in mm
+    print("Tick")
+    print(time.time())
+    for tube in range(TUBE_COUNT):
+        t0 = time.time()
+        distance = lidars.get_distance(tube) # Get distance in mm        
+        t1 = time.time()
+        print("Lidar time: ", t1 - t0)
         if MIN_DIST < distance < MAX_DIST:
             pixel_dist = int(distance * PIXELS_PER_MM)
         else:
-            pixel_dist = 0
-        distances.append(pixel_dist)
+            pixel_dist = 0            
+        distances.append(pixel_dist)        
+    t0 = time.time()
     frame = current_program.update(distances)
+    t1 = time.time()
+    print("Program time: ", t1 - t0)
+    t0 = time.time()    
     updatepixels(frame)
+    t1 = time.time()
+    print("Pixel time: ", t1 - t0)
+    print(time.time())
     time.sleep(0.001)
+    
