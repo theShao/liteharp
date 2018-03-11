@@ -183,7 +183,7 @@ class syn_Midi():
         self.channel = channel
         self.note = note
         
-        midiout.send_message([PROGRAM_CHANGE + channel, 2])
+        midiout.send_message([PROGRAM_CHANGE + channel, 14])
         
         self.note_on = [NOTE_ON + channel, note, 112]  # channel 1, middle C, velocity 112
         self.note_off = [NOTE_OFF + channel, note, 0]        

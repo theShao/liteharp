@@ -24,7 +24,7 @@ class test_Midi:
         
         for s in range(tube_count):
             # Add a synth for each tube at the correct freq
-            self.mysynths.append(synths.syn_Midi(0, 60))
+            self.mysynths.append(synths.syn_Midi(0, 45))
     
     def update(self, distances):
         # Decay
@@ -61,7 +61,7 @@ class prog_Basic:
     def __init__(self, tube_count, led_per_tube):
         self.tubelength = led_per_tube
         FREQS = [220, 247, 262, 294, 330, 349, 392, 440]
-        self.base_colours = np.tile(np.array(lighttools.sinebow(led_per_tube))/1.5, (tube_count, 1, 1)) # Default colour for each pixel
+        self.base_colours = np.tile(np.array(lighttools.sinebow(led_per_tube, 200)), (tube_count, 1, 1)) # Default colour for each pixel
         #self.base_colours /= 2 # Soften the colours a bit.
         self.current_colours = self.base_colours.copy() # Initial colours match base colours
         self.mysynths = []

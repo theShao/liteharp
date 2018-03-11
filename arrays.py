@@ -80,7 +80,7 @@ current_program = next(program_cycle)
 print("Set initial colours:")
 frame = current_program.update([0,0,0,0,0,0,0,0])
 updatepixels(frame)
-
+this_time = time.time()
 while True:
     # Check fur button press
     if not GPIO.input(26):
@@ -92,18 +92,21 @@ while True:
     
     # Main logic
     distances = []
-    print("Tick")
-    print(time.time())
+    last_time = this_time
+    this_time = time.time()
+    print("Loop ms: %f" % ((this_time - last_time) * 1000))    
     for tube in range(TUBE_COUNT):
         t0 = time.time()
         distance = lidars.get_distance(tube) # Get distance in mm        
-        t1 = time.time()
-        print("Lidar time: ", t1 - t0)
+
         if MIN_DIST < distance < MAX_DIST:
             pixel_dist = int(distance * PIXELS_PER_MM)
         else:
             pixel_dist = 0            
-        distances.append(pixel_dist)        
+        distances.append(pixel_dist)
+        t1 = time.time()
+        print("Lidar time: %f Distance: %d" % (t1 - t0, distance))        
+    t0 = time.time()
     t0 = time.time()
     frame = current_program.update(distances)
     t1 = time.time()
@@ -112,6 +115,6 @@ while True:
     updatepixels(frame)
     t1 = time.time()
     print("Pixel time: ", t1 - t0)
-    print(time.time())
+    #print(time.time() * 1000)
     time.sleep(0.001)
     
