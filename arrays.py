@@ -80,7 +80,9 @@ current_program = next(program_cycle)
 print("Set initial colours:")
 frame = current_program.update([0,0,0,0,0,0,0,0])
 updatepixels(frame)
+
 this_time = time.time()
+
 while True:
     # Check fur button press
     if not GPIO.input(26):
@@ -91,30 +93,39 @@ while True:
         time.sleep(0.5) # We could debounce the button press or we could just wait...  	
     
     # Main logic
+    
+    # Reset
     distances = []
     last_time = this_time
     this_time = time.time()
     print("Loop ms: %f" % ((this_time - last_time) * 1000))    
+    
+    # Sensor work
+    t0 = time.time()
     for tube in range(TUBE_COUNT):
-        t0 = time.time()
-        distance = lidars.get_distance(tube) # Get distance in mm        
-
+        
+        reading = lidars.get_reading(tube) # Get distance in mm        
+        print("Sensor: {} Distance: {} Strenght: {} Quality: {} Mode: {}".format(tube, *(reading)))
+        distance = reading[0]
         if MIN_DIST < distance < MAX_DIST:
             pixel_dist = int(distance * PIXELS_PER_MM)
         else:
             pixel_dist = 0            
         distances.append(pixel_dist)
-        t1 = time.time()
-        print("Lidar time: %f Distance: %d" % (t1 - t0, distance))        
-    t0 = time.time()
+    t1 = time.time()
+    print("Lidar time: %f "% (t1 - t0))        
+    
+    # Program work
     t0 = time.time()
     frame = current_program.update(distances)
     t1 = time.time()
     print("Program time: ", t1 - t0)
+    
+    # Neopixel work
     t0 = time.time()    
     updatepixels(frame)
     t1 = time.time()
     print("Pixel time: ", t1 - t0)
-    #print(time.time() * 1000)
+    
     time.sleep(0.001)
     
