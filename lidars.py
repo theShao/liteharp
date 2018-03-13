@@ -17,7 +17,7 @@ TFMINI_LONG_DISTANCE_MODE = "\x42\x57\x02\x00\x00\x00\x07\x11"
 TFMINI_RESET_ALL_SETTINGS = "\x42\x57\x02\x00\xFF\xFF\xFF\xFF" 
 TFMINI_SET_BAUD_RATE = "\x42\x57\x02\x00\x00\x00\xFF\x08"  # Where FF is a byte from 0x00 to 0x0c for 9600 to 51200 baud
 
-import serial, time
+import serial, time, curses
 
 ports = []
 
@@ -27,9 +27,9 @@ def init(devices):
         port = serial.Serial(device, baudrate=115200, timeout=0.5)
         ports.append(port)  
         port.flushInput()
-        """
+        
         print("Writing init strings")
-                port.write(TFMINI_ENTER_CONFIG) # Enter config mode
+        port.write(TFMINI_ENTER_CONFIG) # Enter config mode
         time.sleep(0.1)
         #port.write("\x42\x57\x02\x00\xFF\xFF\xFF\xFF") # Set baud rate
         #time.sleep(0.1)
@@ -38,7 +38,7 @@ def init(devices):
         port.write(TFMINI_SHORT_DISTANCE_MODE) # Serial mode (instead of pix, which sends text not bytes)
         time.sleep(0.1)
         port.write(TFMINI_EXIT_CONFIG) # Exit config mode
-        """
+        
         print("%s initialised" % device)
 
     print("Sensors initialised on %d ports" % len(ports))
@@ -78,19 +78,26 @@ def get_reading(portnumber):
             checksum = ord(last[6])
             return distance, strength, quality, reserved
         except Exception as e: #Something non-numerical data in the stream, probably an error
-            print(e.message)
-            print(buffer)         
-
+            pass
+            #print(e.message)
+            #print(buffer)
     #Either got an error or couldn't find start of data block
     return (0, 0, 0, 0) # Return dummy data so program can continue.
 
 if __name__ == "__main__":
 
     init(devices = ["/dev/ttyUSB" + str(i) for i in range(8)]) # ttyUSB0 --> ttyUSB8)
-        
-    while True:
 
-        for portnumber, _ in enumerate(ports):
-            distance, strength, quality, reserved = get_reading(portnumber)
-            print("Laser: %d Dist: %d Strength: %d Quality: %d Reserved: %d" %(portnumber, distance, strength, quality, reserved))
-            time.sleep(0.02)
+    stdscr = curses.initscr()
+    
+    try:
+        while True:        
+            for portnumber, _ in enumerate(ports):
+                distance, strength, quality, reserved = get_reading(portnumber)
+                stdscr.addstr(portnumber, 0, "Laser: %d Dist: %d Strength: %d Quality: %d Reserved: %d" %(portnumber, distance, strength, quality, reserved))
+                time.sleep(0.02)
+                stdscr.refresh()
+    except Exception as e:
+        # Fix console after curses
+        os.system('stty sane')
+        raise e

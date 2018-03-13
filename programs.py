@@ -32,16 +32,18 @@ class test_Midi:
         for tube, distance in enumerate(distances):
             controller = self.mysynths[tube]
             if distance > 0:
-            
+                
                 # Update synths
                 #
                 # Set modulation and ensure sound playing
-                controller.modulate(distance)
+                controller.modulate(min(distance * 2, 127))
                 if not controller.playing:
                     controller.start()            
                 
                 # Update pixels
                 #
+                # Account for dead pixels. TODO
+                distance += 18
                 # Light up the pixel at the detected position
                 self.current_colours[tube, distance] = lighttools.WHITE #255 - base_colours[tube, pixel_dist]
                 # And a couple either side for extra brightness

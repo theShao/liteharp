@@ -25,16 +25,17 @@ LED_INVERT      = False   # True to invert the signal (when using NPN transistor
 
 # INSTRUMENT
 TUBE_COUNT      = 8       # Number of strips
-TUBE_LENGTH     = 1170  # mm
+TUBE_LENGTH     = 1167  # mm
+PIXELS_PER_MM   = 0.06 # 60 led per metre strips
 LED_PER_TUBE    = 70     # Number of LED strip per strip
 
 PIXEL_COUNT = TUBE_COUNT * LED_PER_TUBE
-PIXELS_PER_MM = LED_PER_TUBE/float(TUBE_LENGTH)
+
+#PIXELS_PER_MM = LED_PER_TUBE/float(TUBE_LENGTH)
 
 # Constraints
-MIN_DIST = 300 # Sensor limitations
-MAX_DIST = 1170 # Physical limitations
-
+MIN_DIST = 250 # Sensor limitations
+MAX_DIST = 1160 # Physical limitations
 VOLUME = 0.5 # Passed to scsynth, 0 -> 1
 
 # INIT
@@ -47,6 +48,7 @@ lidars.init(DEVSTRINGS)
 print("Seting up LED strip with %d LEDs" %PIXEL_COUNT)
 strip = neopixel.Adafruit_NeoPixel(PIXEL_COUNT, LED_PIN, LED_FREQ_HZ, LED_DMA, LED_INVERT, LED_BRIGHTNESS, LED_CHANNEL)
 strip.begin()
+print("LED Strip running")
 
 def np_array_to_colour(array):
     '''
@@ -108,6 +110,7 @@ while True:
         print("Sensor: {} Distance: {} Strenght: {} Quality: {} Mode: {}".format(tube, *(reading)))
         distance = reading[0]
         if MIN_DIST < distance < MAX_DIST:
+            distance -= MIN_DIST
             pixel_dist = int(distance * PIXELS_PER_MM)
         else:
             pixel_dist = 0            
@@ -127,5 +130,5 @@ while True:
     t1 = time.time()
     print("Pixel time: ", t1 - t0)
     
-    time.sleep(0.001)
+    time.sleep(0)
     
