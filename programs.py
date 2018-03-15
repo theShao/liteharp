@@ -43,7 +43,7 @@ class test_Midi:
                 # Update pixels
                 #
                 # Account for dead pixels. TODO
-                distance += 18
+                distance += 12
                 # Light up the pixel at the detected position
                 self.current_colours[tube, distance] = lighttools.WHITE #255 - base_colours[tube, pixel_dist]
                 # And a couple either side for extra brightness

@@ -17,7 +17,7 @@ TFMINI_LONG_DISTANCE_MODE = "\x42\x57\x02\x00\x00\x00\x07\x11"
 TFMINI_RESET_ALL_SETTINGS = "\x42\x57\x02\x00\xFF\xFF\xFF\xFF" 
 TFMINI_SET_BAUD_RATE = "\x42\x57\x02\x00\x00\x00\xFF\x08"  # Where FF is a byte from 0x00 to 0x0c for 9600 to 51200 baud
 
-import serial, time, curses
+import serial, time, curses, os
 
 ports = []
 
@@ -28,16 +28,17 @@ def init(devices):
         ports.append(port)  
         port.flushInput()
         
-        print("Writing init strings")
-        port.write(TFMINI_ENTER_CONFIG) # Enter config mode
-        time.sleep(0.1)
-        #port.write("\x42\x57\x02\x00\xFF\xFF\xFF\xFF") # Set baud rate
+        #print("Writing init strings")
+        
+        #port.write(TFMINI_ENTER_CONFIG) # Enter config mode
         #time.sleep(0.1)
-        port.write(TFMINI_MANUAL_DISTANCE_MODE) # Set to read in mm
-        time.sleep(0.1)
-        port.write(TFMINI_SHORT_DISTANCE_MODE) # Serial mode (instead of pix, which sends text not bytes)
-        time.sleep(0.1)
-        port.write(TFMINI_EXIT_CONFIG) # Exit config mode
+        #port.write("\x42\x57\x02\x00\x00\x00\x06\x08") # Set baud rate - penultimate byte 0x06=115200, 0x00=9600
+        #time.sleep(0.1)
+        #port.write(TFMINI_MANUAL_DISTANCE_MODE) # Set to read in mm
+        #time.sleep(0.1)
+        #port.write(TFMINI_SHORT_DISTANCE_MODE) # Serial mode (instead of pix, which sends text not bytes)
+        #time.sleep(0.1)
+        #port.write(TFMINI_EXIT_CONFIG) # Exit config mode
         
         print("%s initialised" % device)
 
@@ -59,10 +60,11 @@ def get_reading(portnumber):
     # 7) Reserved bytes (Shows whether the TFMini has chosen short or long sensing mode - 2 for short, 7 for long
     # 8) Original signal quality degree
     # 9) Checksum parity bit (low 8bit), Checksum = Byte1 + Byte2 +...+Byte8
-    if port.inWaiting() > 18:
+    if port.inWaiting() > 8:
         try:            
             buffer = port.read(port.inWaiting())
-            last = buffer.split("YY")[-2:-1][0] # Grab the last-but-one packet in case the last is incomplete.
+            #print buffer
+            last = buffer.split("YY")[-1] # Grab the last-but-one packet in case the last is incomplete.            
             # Distance
             low = ord(last[0])
             high = ord(last[1])
@@ -77,11 +79,11 @@ def get_reading(portnumber):
             quality = ord(last[5])
             checksum = ord(last[6])
             return distance, strength, quality, reserved
-        except Exception as e: #Something non-numerical data in the stream, probably an error
-            pass
-            #print(e.message)
+        except Exception as e:
+            print("Error parsing serial data")            
             #print(buffer)
-    #Either got an error or couldn't find start of data block
+        else:
+            print("Underrun. Bytes: {}".format(port.inWaiting()))
     return (0, 0, 0, 0) # Return dummy data so program can continue.
 
 if __name__ == "__main__":
@@ -97,7 +99,9 @@ if __name__ == "__main__":
                 stdscr.addstr(portnumber, 0, "Laser: %d Dist: %d Strength: %d Quality: %d Reserved: %d" %(portnumber, distance, strength, quality, reserved))
                 time.sleep(0.02)
                 stdscr.refresh()
-    except Exception as e:
+    except: # Exception as e:
+        # print(e.message)
         # Fix console after curses
+        curses.endwin()
         os.system('stty sane')
-        raise e
+        # raise e

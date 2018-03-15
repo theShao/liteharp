@@ -130,5 +130,5 @@ while True:
     t1 = time.time()
     print("Pixel time: ", t1 - t0)
     
-    time.sleep(0)
+    time.sleep(0.01)
     
