@@ -11,20 +11,22 @@
 import synths, lighttools
 import random
 import numpy as np
-
+'''
 class test_Midi:
     mysynths = []
     # Sound properties
     def __init__(self, tube_count, led_per_tube):
         self.tubelength = led_per_tube
+        #self.base_colours = np.tile(np.array(lighttools.BLUE), (tube_count, led_per_tube, 1)) #.astype(np.uint8) # Default colour for each pixel        
         self.base_colours = np.tile(np.array(lighttools.sinebow(led_per_tube, 180)), (tube_count, 1, 1)) #.astype(np.uint8) # Default colour for each pixel        
         #self.base_colours /= 2 # Soften the colours a bit.
         self.current_colours = self.base_colours.copy() # Initial colours match base colours
         self.mysynths = []
         
+        notes = [45, 47, 48, 50, 52, 53, 56, 57]
         for s in range(tube_count):
             # Add a synth for each tube at the correct freq
-            self.mysynths.append(synths.syn_Midi(0, 45))
+            self.mysynths.append(synths.syn_Midi(s, notes[s] + 12))
     
     def update(self, distances):
         # Decay
@@ -55,7 +57,52 @@ class test_Midi:
                 if controller.playing:
                     controller.stop()
         return self.current_colours
+'''
+        
+class test_Midi2:    
+   
+    # Sound properties
+    def __init__(self, tube_count, led_per_tube):
+        self.tubelength = led_per_tube
 
+        self.mysynths = []
+        
+        blue = np.array([88, 114, 232])
+        white = np.array([255, 255, 255])
+        black = np.array([0, 0, 0])
+        self.fore_colours = np.tile(lighttools.make_fade(blue, white, led_per_tube), (tube_count, 1, 1))
+        self.back_colours = np.tile(black, (tube_count, led_per_tube, 1))
+        self.current_colours = self.back_colours.copy()
+        
+        notes = [45, 47, 48, 50, 52, 53, 56, 57]
+        for s in range(tube_count):
+            # Add a synth for each tube at the correct freq
+            self.mysynths.append(synths.syn_Midi(s, notes[s] + 12))
+    
+    def update(self, distances):
+        # Decay
+        #self.current_colours = lighttools.fade(self.current_colours, self.base_colours, 10)
+        for tube, distance in enumerate(distances):
+            controller = self.mysynths[tube]
+            if distance > 0:                
+                # Update synths
+                #
+                # Set modulation and ensure sound playing
+                controller.modulate(min(distance * 2, 127))
+                if not controller.playing:
+                    controller.start()            
+
+            else:
+                if controller.playing:
+                    controller.stop()
+            
+            # Account for dead pixels. TODO
+            distance += 12
+            # Set all pixels below hand to foreground colours
+            self.current_colours[tube] = np.concatenate((self.fore_colours[tube, :distance], self.back_colours[tube, distance:]))
+
+        return self.current_colours
+        
 class prog_Basic:
     
     mysynths = []

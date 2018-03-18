@@ -153,11 +153,12 @@ def np_array_to_colour(array):
     '''
     Takes a 3-element numpy array and returns a 24-bit colour as a zero-padded 32-bit int
     '''
-    array = array.clip(0, 255, out=array).astype(np.uint8) # Fix colours outside range. This limits rather than wrapping
+    #array = array.clip(0, 255, out=array).astype(np.uint8) # Fix colours outside range. This limits rather than wrapping
     #return(array[0] << 16 | array[1] << 8 | array[2])
-    return(LED_GAMMA[array[0]] << 16 | LED_GAMMA[array[1]] << 8 | LED_GAMMA[array[2]])
+    colour = LED_GAMMA[array[0]] << 16 | LED_GAMMA[array[1]] << 8 | LED_GAMMA[array[2]]
+    return colour
 
-def fade(colours, target_colours = BLACK, rate = 1):
+def fade(colours, target_colours, rate = 1):
     '''
     Fade from one numpy array of pixel colours to another
     colours: 2-d numpy array of RGB values
@@ -205,7 +206,13 @@ def setpixels(strip, colours, scale = False):
     
     strip.show()
 
-
+def make_fade(start_colour = np.array(RED), end_colour = np.array(BLUE), count = 70):
+    colours = []
+    diff = (end_colour - start_colour) / float(count - 1)
+    for i in range(count):
+        colours.append(start_colour)
+        start_colour = np.add(start_colour, diff, casting='unsafe')
+    return np.array(colours).astype(np.uint8)
     
 def makeColorGradient(frequency1 = .2, frequency2 = .2, frequency3 = .2, phase1 = 0, phase2 = 2*np.pi/3, phase3 = 4*np.pi/3, center = 128, width = 127, len = 50):
     colours = []

@@ -5,10 +5,10 @@ from rtmidi.midiconstants import NOTE_OFF, NOTE_ON, CONTROL_CHANGE, PROGRAM_CHAN
 print("Setting up midi")
 try:
     global midiout, port_name
-    midiout, port_name = open_midioutput(1, 1)
+    midiout, port_name = open_midioutput(2, 1)
 except (EOFError, KeyboardInterrupt):
     sys.exit()
-
+ 
 class syn_Moog():    
     # moogbass synthdef from Steal this Sound
     # arg out = 0, pan = 0, freq = 440, amp = 0.1, gate = 1, cutoff = 1000, gain = 2.0,
