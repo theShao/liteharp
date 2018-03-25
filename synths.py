@@ -189,8 +189,8 @@ class syn_Midi():
         self.note_off = [NOTE_OFF + channel, note, 0]        
         self.playing = False
     
-    def modulate(self, value): # Input range 0 - 1000
-        modulate = [CONTROL_CHANGE  + self.channel, 1, value * 2]
+    def modulate(self, value): # Input range 0 - 127
+        modulate = [CONTROL_CHANGE  + self.channel, 1, value]
         print(modulate)
         midiout.send_message(modulate)
         

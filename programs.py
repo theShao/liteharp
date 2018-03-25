@@ -11,8 +11,12 @@
 import synths, lighttools
 import random
 import numpy as np
+
+class tube(object):
+    pass
+
 '''
-class test_Midi:
+class test_Rainbow:
     mysynths = []
     # Sound properties
     def __init__(self, tube_count, led_per_tube):
@@ -46,25 +50,22 @@ class test_Midi:
                 #
                 # Account for dead pixels. TODO
                 distance += 12
-                # Light up the pixel at the detected position
-                self.current_colours[tube, distance] = lighttools.WHITE #255 - base_colours[tube, pixel_dist]
-                # And a couple either side for extra brightness
-                for i in range(2):
-                        self.current_colours[tube, min(distance + i, self.tubelength - 1)] = lighttools.WHITE #255 - base_colours[tube, pixel_dist]
-                        self.current_colours[tube, max(distance - i, 0)] = lighttools.WHITE #255 - base_colours[tube, pixel_dist]
+                # Light up 5 pixels at the detected position
+                self.current_colours[tube, distance-2:distance+2] = lighttools.WHITE #255 - base_colours[tube, pixel_dist]
 
             else:
                 if controller.playing:
                     controller.stop()
         return self.current_colours
 '''
-        
-class test_Midi2:    
+
+'''        
+class test_Stackbars:    
    
     # Sound properties
     def __init__(self, tube_count, led_per_tube):
         self.tubelength = led_per_tube
-
+        self.tube_count = tube_count
         self.mysynths = []
         
         blue = np.array([88, 114, 232])
@@ -74,14 +75,26 @@ class test_Midi2:
         self.back_colours = np.tile(black, (tube_count, led_per_tube, 1))
         self.current_colours = self.back_colours.copy()
         
+        self.auto_tube = 0
+        self.auto_pixel = 0
+        
         notes = [45, 47, 48, 50, 52, 53, 56, 57]
         for s in range(tube_count):
             # Add a synth for each tube at the correct freq
             self.mysynths.append(synths.syn_Midi(s, notes[s] + 12))
     
     def update(self, distances):
-        # Decay
-        #self.current_colours = lighttools.fade(self.current_colours, self.base_colours, 10)
+        if sum(distances) == 0:
+            # Automatic mode.
+            # Decay
+            self.current_colours = lighttools.fade(self.current_colours, self.back_colours, 10)
+            self.current_colours[self.auto_tube, self.auto_pixel] = self.fore_colours[self.auto_tube, self.auto_pixel]
+            self.auto_pixel += 1
+            if self.auto_pixel >= self.tubelength:
+                self.auto_pixel = 0
+                self.auto_tube = random.randint(0, self.tube_count)
+            distances[self.auto_tube] = self.auto_pixel
+            
         for tube, distance in enumerate(distances):
             controller = self.mysynths[tube]
             if distance > 0:                
@@ -102,7 +115,202 @@ class test_Midi2:
             self.current_colours[tube] = np.concatenate((self.fore_colours[tube, :distance], self.back_colours[tube, distance:]))
 
         return self.current_colours
+'''
+'''
+
+class test_Rippler:    
+   
+    # Sound properties
+    def __init__(self, tube_count, led_per_tube):
+        self.tube_length = led_per_tube
+        self.tube_count = tube_count
+        self.midi_ratio = 127/led_per_tube
+        self.synths = []
         
+        blue = np.array([88, 60, 232])
+        turq = np.array([234, 40, 214])
+        white = np.array([255, 255, 255])
+        black = np.array([0, 0, 0])
+        column = np.concatenate((lighttools.make_fade(blue, turq, led_per_tube/2), lighttools.make_fade(turq, blue, led_per_tube/2)), axis=0)
+        factor = int(led_per_tube/tube_count)
+        self.current_colours = np.array([np.roll(column, t, axis=0) for t in range(tube_count)])
+        self.base_colours = self.current_colours.copy()
+        notes = [45, 47, 48, 50, 52, 53, 56, 57]
+        for s in range(tube_count):        
+            # Add a synth for each tube at the correct freq
+            self.synths.append(synths.syn_Midi(s, notes[s] + 12))
+        self.auto_ticks = [random.randint(0, 9) for _ in range(tube_count)]
+        self.auto_directions = [random.choice([-1, 1]) for _ in range(tube_count)]
+        self.auto_bubbles = [[0, 0] for _ in range(tube_count)]
+        self.auto_play = True
+        self.idle_count = 0        
+        
+    def update(self, distances):        
+        if distances == [0] * self.tube_count:
+            self.idle_count += 1
+            if self.idle_count >= 100:
+                self.auto_play = True
+                self.idle_count = 0
+        else:
+            self.auto_bubbles = [[0, 0] for _ in range(self.tube_count)]
+            self.idle_count = 0
+            self.auto_play = False
+            
+        for tube, distance in enumerate(distances):
+            controller = self.synths[tube]
+            #
+            # Update the timer
+            #
+            self.auto_ticks[tube] += 1
+            if self.auto_ticks[tube] > 100:
+                self.auto_ticks[tube] = 1
+            
+            #
+            # Update the background
+            #            
+            if self.auto_ticks[tube] % 10 == 0:
+                # Maybe change direction of background
+                self.auto_directions[tube] = random.choice([-1, 1])
+                self.auto_ticks[tube] = 0
+            
+            if self.auto_ticks[tube] % 1 == 0:                
+                # Fade from the previous frame to where the background was for previous frame
+                self.current_colours[tube] = lighttools.fade(self.current_colours[tube], self.base_colours[tube], 5)
+                # Roll the background pixels for reference
+                self.base_colours[tube] = np.roll(self.base_colours[tube], self.auto_directions[tube], axis=0)
+                # Roll all pixels one place
+                self.current_colours[tube] = np.roll(self.current_colours[tube], self.auto_directions[tube], axis=0)
+                     
+            
+            if self.auto_play:
+                # Run bubbles if present
+                # bubble: list[position, speed]
+                if self.auto_bubbles[tube][0] > 0:                    
+                    # Move the bubble up the tube
+                    self.auto_bubbles[tube][0] += self.auto_bubbles[tube][1]
+
+                    # Check if we've reached the top of the tube
+                    if self.auto_bubbles[tube][0] >= self.tube_length:
+                        self.auto_bubbles[tube][0] = 0
+                    else:
+                        # Fake the distance reading
+                        distance = self.auto_bubbles[tube][0]
+                else:
+                    # Maybe make a new bubble
+                    if random.randint(0, 1000) == 0:
+                        self.auto_bubbles[tube] = [1, random.randint(1, 3)]     
+            
+            if distance > 0:                
+                # Update synths
+                #
+                # Set modulation and ensure sound playing
+                controller.modulate(int(min(distance * self.midi_ratio, 127)))
+                if not controller.playing:
+                    controller.start()                 
+
+                # Track distance with pixels
+                self.current_colours[tube, distance] = np.array([255, 255, 255])
+                
+            else:
+                # Stop the synth
+                if controller.playing:
+                    controller.stop()
+
+        return self.current_colours
+
+'''
+        
+        
+class test_Fire:    
+    blackbody_palette = [[0,0,0],[35,15,9],[60,22,17],[88,27,22],[117,30,26],[148,32,31],[177,38,35],[193,65,29],
+                        [209,88,20],[223,113,5],[226,141,4],[228,169,3],[229,195,5],[235,218,74],[249,236,168],[255,255,255]]
+    # Sound properties
+    def __init__(self, tube_count, led_per_tube):
+        self.tube_length = led_per_tube
+        self.tube_count = tube_count
+        self.midi_ratio = 127.0/led_per_tube
+        black = np.array([0, 0, 0])
+        self.synths = []        
+        self.current_colours = np.tile(black, (tube_count, led_per_tube, 1))
+        self.base_colours = self.current_colours.copy()
+        self.auto_play = True
+        self.idle_count = 0
+        notes = [i - 12 for i in [45, 47, 48, 50, 52, 53, 56, 57]]
+        for s in range(tube_count):        
+            # Add a synth for each tube at the correct freq
+            self.synths.append(synths.syn_Midi(s, notes[s] + 12))
+        
+        self.palette = np.genfromtxt('blackbodyGRB.csv', delimiter=',', dtype=None)
+        self.COOLING = 55
+        self.SPARKING = 75
+        self.heat = [[0 for i in range(led_per_tube)] for j in range(tube_count)]
+        
+        
+    def update(self, distances):        
+        '''
+        if distances == [0] * self.tube_count:
+            self.idle_count += 1
+            if self.idle_count >= 100:
+                self.auto_play = True
+                self.idle_count = 0
+        else:
+            self.idle_count = 0
+            self.auto_play = False
+        '''   
+        for tube, distance in enumerate(distances):
+            controller = self.synths[tube]
+            
+            # Cool down each cell
+            for i, temp in enumerate(self.heat[tube]):
+                self.heat[tube][i] = max(int(self.heat[tube][i] - random.randint(0, ((self.COOLING * 10)/ self.tube_length) + 2)), 0)
+            # Drift heat upwards and diffuse with surrounding pixels
+            for k in range(self.tube_length - 1, 2, -1):
+                self.heat[tube][k] = int((self.heat[tube][k - 1] + self.heat[tube][k - 2] + self.heat[tube][k - 2])/3)
+            '''    
+            if self.auto_play:
+                # Generate new spark near the bottom
+                if (random.randint(0, 255) < self.SPARKING):
+                    y = random.randint(0, 7)
+                    self.heat[tube][y] = min(self.heat[tube][y] + random.randint(160, 255), 255)
+            else:
+                # Generate a new spark at detected position
+                self.heat[tube][distance] = min(self.heat[tube][distance] + random.randint(160, 255), 255)
+                # Set all pixels below to high temperature
+                self.heat[tube][:distance] = [min(self.heat[tube][i] + random.randint(160, 255), 255) for i in range(distance)]
+            '''          
+            
+            if distance > 0:                
+                # Update synths
+                #
+                # Set modulation and ensure sound playing
+                controller.modulate(int(min(distance * self.midi_ratio, 127)))
+                if not controller.playing:
+                    controller.start()                
+                
+                # Generate a new spark at detected position
+                self.heat[tube][distance] = min(self.heat[tube][distance] + random.randint(160, 255), 255)
+                # Set all pixels below to high temperature
+                self.heat[tube][:distance] = [min(self.heat[tube][i] + random.randint(160, 255), 255) for i in range(distance)]
+                
+            else:
+                # Stop the synth
+                if controller.playing:
+                    controller.stop()
+                
+                # Generate new spark near the bottom
+                if (random.randint(0, 255) < self.SPARKING):
+                    y = random.randint(0, 7)
+                    self.heat[tube][y] = min(self.heat[tube][y] + random.randint(50, 150), 255)
+            
+            # Map heats to colours
+            for i, temp in enumerate(self.heat[tube]):
+                temp = int(temp * 240.0/255) # Avoid the top end
+                colour = self.palette[temp]
+                self.current_colours[tube][i] = colour      
+        
+        return self.current_colours
+       
+       
 class prog_Basic:
     
     mysynths = []

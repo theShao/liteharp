@@ -50,20 +50,11 @@ strip = neopixel.Adafruit_NeoPixel(PIXEL_COUNT, LED_PIN, LED_FREQ_HZ, LED_DMA, L
 strip.begin()
 print("LED Strip running")
 
-def np_array_to_colour(array):
-    '''
-    Takes a 3-element numpy array and returns a 24-bit colour as a zero-padded 32-bit int
-    '''
-    #array = array.clip(0, 255, out=array).astype(np.uint8) # Fix colours outside range. This limits rather than wrapping
-    #return(array[0] << 16 | array[1] << 8 | array[2])
-    colour = lighttools.LED_GAMMA[array[0]] << 16 | lighttools.LED_GAMMA[array[1]] << 8 | lighttools.LED_GAMMA[array[2]]
-    return colour
-
 def updatepixels(colours):
     pixels = colours.reshape(-1, 3) # Flatten
     #print(pixels)
     for i, pixel in enumerate(pixels):
-        strip.setPixelColor(i, np_array_to_colour(pixel))
+        strip.setPixelColor(i, lighttools.np_array_to_colour(pixel))
     strip.show()
 
 # Supercolider setup
