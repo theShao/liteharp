@@ -241,8 +241,8 @@ class test_Fire:
             self.synths.append(synths.syn_Midi(s, notes[s] + 12))
         
         self.palette = np.genfromtxt('blackbodyGRB.csv', delimiter=',', dtype=None)
-        self.COOLING = 55
-        self.SPARKING = 75
+        self.COOLING = 50
+        self.SPARKING = 80
         self.heat = [[0 for i in range(led_per_tube)] for j in range(tube_count)]
         
         
@@ -264,8 +264,10 @@ class test_Fire:
             for i, temp in enumerate(self.heat[tube]):
                 self.heat[tube][i] = max(int(self.heat[tube][i] - random.randint(0, ((self.COOLING * 10)/ self.tube_length) + 2)), 0)
             # Drift heat upwards and diffuse with surrounding pixels
+            
             for k in range(self.tube_length - 1, 2, -1):
-                self.heat[tube][k] = int((self.heat[tube][k - 1] + self.heat[tube][k - 2] + self.heat[tube][k - 2])/3)
+                self.heat[tube][k] = int((2 * self.heat[tube][k - 1] + 2 * self.heat[tube][k - 2] + 2 * self.heat[tube][k - 2] #) / 3)
+                                            + self.heat[(tube + 1) % 8][k - 1] + self.heat[(tube - 1) % 8][k - 1]) /8)
             '''    
             if self.auto_play:
                 # Generate new spark near the bottom
