@@ -15,7 +15,7 @@ import numpy as np
 class tube(object):
     pass
 
-'''
+
 class test_Rainbow:
     mysynths = []
     # Sound properties
@@ -48,8 +48,6 @@ class test_Rainbow:
                 
                 # Update pixels
                 #
-                # Account for dead pixels. TODO
-                distance += 12
                 # Light up 5 pixels at the detected position
                 self.current_colours[tube, distance-2:distance+2] = lighttools.WHITE #255 - base_colours[tube, pixel_dist]
 
@@ -57,7 +55,7 @@ class test_Rainbow:
                 if controller.playing:
                     controller.stop()
         return self.current_colours
-'''
+
 
 '''        
 class test_Stackbars:    
@@ -116,8 +114,8 @@ class test_Stackbars:
 
         return self.current_colours
 '''
-'''
 
+'''
 class test_Rippler:    
    
     # Sound properties
@@ -217,10 +215,10 @@ class test_Rippler:
                     controller.stop()
 
         return self.current_colours
-
 '''
+
         
-        
+"""        
 class test_Fire:    
     blackbody_palette = [[0,0,0],[35,15,9],[60,22,17],[88,27,22],[117,30,26],[148,32,31],[177,38,35],[193,65,29],
                         [209,88,20],[223,113,5],[226,141,4],[228,169,3],[229,195,5],[235,218,74],[249,236,168],[255,255,255]]
@@ -311,7 +309,7 @@ class test_Fire:
                 self.current_colours[tube][i] = colour      
         
         return self.current_colours
-       
+"""       
        
 class prog_Basic:
     

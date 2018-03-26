@@ -25,19 +25,23 @@ LED_INVERT      = False   # True to invert the signal (when using NPN transistor
 
 # INSTRUMENT
 TUBE_COUNT      = 8       # Number of strips
-TUBE_LENGTH     = 1167  # mm
-PIXELS_PER_MM   = 0.06 # 60 led per metre strips
-LED_PER_TUBE    = 70     # Number of LED strip per strip
-
-PIXEL_COUNT = TUBE_COUNT * LED_PER_TUBE
-
-#PIXELS_PER_MM = LED_PER_TUBE/float(TUBE_LENGTH)
+TUBE_LENGTH     = 1170  # Length of the LED strip, mm
+#PIXELS_PER_MM   = 0.06 # 60 led per metre strips
+PIXELS_PER_TUBE    = 70     # Number of LED strip per strip
+INVERT_PIXELS   = False # Pixels numbered top to bottom
+INVERT_SENSORS  = False # Sensors attached at top
+SENSOR_OFFSET   = 0     # Distance from the sensor to the first LED
 
 # Constraints
 MIN_DIST = 250 # Sensor limitations
-MAX_DIST = 1160 # Physical limitations
+#MAX_DIST = 1160 # Physical limitations
 VOLUME = 0.5 # Passed to scsynth, 0 -> 1
 
+# Derived
+PIXEL_COUNT = TUBE_COUNT * PIXELS_PER_TUBE
+PIXELS_PER_MM = float(PIXELS_PER_TUBE) / TUBE_LENGTH
+PIXEL_OFFSET = int((MIN_DIST - SENSOR_OFFSET) * PIXELS_PER_MM) # First pixel that's inside the sensor range
+MAX_DIST = TUBE_LENGTH + SENSOR_OFFSET
 # INIT
 
 # Sensor setup
@@ -51,18 +55,32 @@ strip.begin()
 print("LED Strip running")
 
 def updatepixels(colours):
+    if INVERT_PIXELS:
+        if INVERT_SENSORS:
+            colours = np.flip(colours, 1)
+            colours = np.pad(colours, [(0, 0), (PIXEL_OFFSET, 0), (0, 0)], mode='constant')
+        else:
+            colours = np.flip(colours, 1)
+            colours = np.pad(colours, [(0, 0), (0, PIXEL_OFFSET), (0, 0)], mode='constant')
+    else:
+        if INVERT_SENSORS:
+            colours = np.pad(colours, [(0, 0), (0, PIXEL_OFFSET), (0, 0)], mode='constant')
+        else:
+            colours = np.pad(colours, [(0, 0), (PIXEL_OFFSET, 0), (0, 0)], mode='constant')
+    
+    #print(colours)
     pixels = colours.reshape(-1, 3) # Flatten
-    #print(pixels)
+    
     for i, pixel in enumerate(pixels):
         strip.setPixelColor(i, lighttools.np_array_to_colour(pixel))
     strip.show()
 
 # Supercolider setup
-sc.start( verbose=1, spew=1)
+#sc.start( verbose=1, spew=1)
 
 # Find and initialize all the classes in the programs module
 print("Initializing programs")
-myprograms = [program(TUBE_COUNT, LED_PER_TUBE) 
+myprograms = [program(TUBE_COUNT, PIXELS_PER_TUBE - PIXEL_OFFSET) 
             for name, program in inspect.getmembers(programs) 
             if inspect.isclass(program)
             and name[:5] == "test_"]
@@ -101,8 +119,11 @@ while True:
         #print("Sensor: {} Distance: {} Strenght: {} Quality: {} Mode: {}".format(tube, *(reading)))
         distance = reading[0]
         if MIN_DIST < distance < MAX_DIST:
-            distance -= MIN_DIST
             pixel_dist = int(distance * PIXELS_PER_MM)
+            if INVERT_SENSORS:
+                pixel_dist = PIXELS_PER_TUBE - pixel_dist
+            else:
+                pixel_dist -= PIXEL_OFFSET
         else:
             pixel_dist = 0            
         distances.append(pixel_dist)
@@ -121,5 +142,5 @@ while True:
     t1 = time.time()
     #print("Pixel time: ", t1 - t0)
     
-    time.sleep(0.01)
+    time.sleep(0.001)
     
