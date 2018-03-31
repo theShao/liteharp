@@ -111,7 +111,7 @@ while True:
     distances = []
     last_time = this_time
     this_time = time.time()
-    print("Loop ms: %f" % ((this_time - last_time) * 1000))    
+    #print("Loop ms: %f" % ((this_time - last_time) * 1000))    
     
     # Sensor work
     t0 = time.time()
@@ -130,19 +130,19 @@ while True:
             pixel_dist = 0            
         distances.append(pixel_dist)
     t1 = time.time()
-    print("Lidar time: %f "% (t1 - t0))        
+    #print("Lidar time: %f "% (t1 - t0))        
     
     # Program work
     t0 = time.time()
     frame = current_program.update(distances)
     t1 = time.time()
-    print("Program time: ", t1 - t0)
+    #print("Program time: ", t1 - t0)
     
     # Neopixel work
     t0 = time.time()    
     updatepixels(frame)
     t1 = time.time()
-    print("Pixel time: ", t1 - t0)
+    #print("Pixel time: ", t1 - t0)
     
     time.sleep(0.001)
     

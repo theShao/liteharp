@@ -128,7 +128,7 @@ class test_Rippler:
         self.midi_program = 0
         self.midi_modulation = 1
         self.midi_velocity = 112
-        
+        self.colour_cycle_speed = 0
 
         notes = [45, 47, 48, 50, 52, 53, 56, 57]
         # synth(channel, program, note, velocity, modulation)
@@ -237,6 +237,7 @@ class test_Fire:
         self.palette = np.genfromtxt('blackbodyGRB.csv', delimiter=',', dtype=None) # Loads precomputed black body palette
         self.COOLING = 50 # How quickly cells cool as they rise, 0-255
         self.SPARKING = 80 # How often new heat sparks are producted, 0-255        
+        self.colour_cycle_speed = 0
         self.midi_program = 1
         self.midi_velocity = 112
         self.midi_modulation = 1
@@ -245,7 +246,7 @@ class test_Fire:
         # synth(channel, program, note, velocity, modulation)
         self.synths = [synths.syn_Midi(n, self.midi_program, notes[n], self.midi_velocity, self.midi_modulation)
                         for n in range(self.tube_count)]
-
+        self.tick = 0
     
     def load(self):
     
@@ -254,8 +255,8 @@ class test_Fire:
         self.current_colours = np.tile(black, (self.tube_count, self.tube_length, 1))
         
         # Initialize heat cells
-        self.heat = [[0 for i in range(led_per_tube)]
-                    for j in range(tube_count)]
+        self.heat = [[0 for i in range(self.tube_length)]
+                    for j in range(self.tube_count)]
         
         # Load synth patch
         for synth in self.synths:
@@ -303,111 +304,118 @@ class test_Fire:
                 colour = self.palette[temp]
                 self.current_colours[tube][i] = colour      
         
+        if self.colour_cycle_speed > 0:
+            self.tick += self.colour_cycle_speed
+            if self.tick == 360:
+                self.tick = 0
+            # Cycle the colours of the palette
+            # This costs ~3ms. Much cheaper than converting each pixel
+            self.palette = lighttools.hueChange(self.palette, self.tick/360.)
+            
         return self.current_colours
-       
-       
-class prog_Basic:
-    
-    mysynths = []
-    # Sound properties
-    def __init__(self, tube_count, led_per_tube):
-        self.tubelength = led_per_tube
-        FREQS = [220, 247, 262, 294, 330, 349, 392, 440]
-        self.base_colours = np.tile(np.array(lighttools.sinebow(led_per_tube, 200)), (tube_count, 1, 1)) # Default colour for each pixel
-        #self.base_colours /= 2 # Soften the colours a bit.
-        self.current_colours = self.base_colours.copy() # Initial colours match base colours
-        self.mysynths = []
+
         
-        for s in range(tube_count):
-            # Add a synth for each tube at the correct freq
-            self.mysynths.append(synths.syn_Moog(FREQS[s]))
+class test_Art:
+    COLOURS = [[112, 241, 90], [151, 250, 119], [171, 250, 130], [210, 255, 145], [205, 240, 175], [199, 224, 200], [160, 216, 189], [148, 200, 161]]
     
-    def update(self, distances):
-        # Decay
-        self.current_colours = lighttools.fade(self.current_colours, self.base_colours, 10)
-        
-        for tube, distance in enumerate(distances):
-            controller = self.mysynths[tube]
-            if distance > 0:           
-                # Update pixels
-                #
-                # Light up the pixel at the detected position
-                self.current_colours[tube, distance] = lighttools.WHITE #255 - base_colours[tube, pixel_dist]
-                # And a couple either side for extra brightness
-                for i in range(2):
-                        self.current_colours[tube, min(distance + i, self.tubelength - 1)] = lighttools.WHITE #255 - base_colours[tube, pixel_dist]
-                        self.current_colours[tube, max(distance - i, 0)] = lighttools.WHITE #255 - base_colours[tube, pixel_dist]
-                
-                # Update synths
-                #
-                # Set modulation and ensure sound playing
-                controller.modulate(distance)
-                if not controller.playing:
-                    controller.start()
-            else:
-                if controller.playing:
-                    controller.stop()                
-        return self.current_colours
-        
-class prog_Fire:
-    
-    mysynths = []
-    # Sound properties
     def __init__(self, tube_count, led_per_tube):
         self.tube_length = led_per_tube
         self.tube_count = tube_count
-        ROOT_FREQ = 220
-        SCALE = [0, 2, 3, 5, 7, 8, 10, 12]  # natural minor
-        FREQS = [ROOT_FREQ if n == 0
-                 else int(round(ROOT_FREQ * (2**(1./12))**n))  # Note is equal to (root note * (2^12)^(semitone steps from root note) )
-                 for n in SCALE]
-        # current_colours = np.tile(lighttools.BLACK, (TUBE_COUNT, LED_PER_TUBE, 1)) # col, row, rgb
-        self.base_colours = np.tile(np.array(lighttools.RED), (tube_count, led_per_tube, 1)) # Default colour for each pixel
-        self.base_colours /= 2 # Soften the colours a bit.
-        self.current_colours = self.base_colours.copy() # Initial colours match base colours
-        self.mysynths = []
-        
-        for s in range(tube_count):
-            # Add a synth for each tube at the correct freq
-            self.mysynths.append(synths.syn_Moog(FREQS[s]))
+        self.midi_ratio = 127.0/led_per_tube
+        self.midi_program = 0
+        self.midi_velocity = 112
+        self.midi_modulation = 1
+        self.colours = [[112, 241, 90], [151, 250, 119], [171, 250, 130], [210, 255, 145], [205, 240, 175], [199, 224, 200], [160, 216, 189], [148, 200, 161]]
+        notes = [i for i in [45, 47, 48, 50, 52, 53, 56, 57]]
+        # synth(channel, program, note, velocity, modulation)
+        self.synths = [synths.syn_Midi(n, self.midi_program, notes[n], self.midi_velocity, self.midi_modulation)
+                        for n in range(self.tube_count)]
+        self.tick = 0
     
+    def load(self):
+    
+        self.base_colours = []
+        for tube in range(self.tube_count):
+            colour =[self.colours[tube]] * self.tube_length
+            self.base_colours.append(colour)
+        
+        self.base_colours = np.array(self.base_colours)
+        self.current_colours = self.base_colours.copy() # Initial colours match base colours
+        # Load synth patch
+        for synth in self.synths:
+            synth.load_program()
+        
     def update(self, distances):
         
-        r = 255
-        g = 15
-        b = 12
+        self.current_colours = lighttools.fade(self.current_colours, self.base_colours, 10)
         
         for tube, distance in enumerate(distances):
-            for pixel in range(self.tube_length):
-                flicker = random.randint(0, 60)
-                r1 = r - flicker
-                g1 = g + flicker
-                b1 = max(g - flicker, 0)
-                self.current_colours[tube, pixel] = np.array([g1, r1, b1])       
+            controller = self.synths[tube]      
             
-            controller = self.mysynths[tube]
-            if distance > 0:           
-                # Update pixels
-                #
-                # Light up the pixel at the detected position
-                self.current_colours[tube, distance] = lighttools.WHITE #255 - base_colours[tube, pixel_dist]
-                # And a couple either side for extra brightness
-                for i in range(2):
-                        self.current_colours[tube, min(distance + i, self.tube_length - 1)] = lighttools.WHITE #255 - base_colours[tube, pixel_dist]
-                        self.current_colours[tube, max(distance - i, 0)] = lighttools.WHITE #255 - base_colours[tube, pixel_dist]
-                
+            if distance > 0:
+                # Light up 5 pixels at the detected position
+                self.current_colours[tube, distance-2:distance+2] = [64, 87, 168] # lighttools.WHITE #255 - base_colours[tube, pixel_dist]
+
                 # Update synths
                 #
                 # Set modulation and ensure sound playing
-                controller.modulate(distance)
+                controller.modulate(int(min(distance * self.midi_ratio, 127)))
                 if not controller.playing:
-                    controller.start()
+                    controller.start()                
+                
             else:
+                # Stop the synth
                 if controller.playing:
-                    controller.stop()                
+                    controller.stop()          
+        return self.current_colours        
+        
+        
+class template:
+    
+    def __init__(self, tube_count, led_per_tube):
+        self.tube_length = led_per_tube
+        self.tube_count = tube_count
+        self.midi_ratio = 127.0/led_per_tube
+        self.midi_program = 0
+        self.midi_velocity = 112
+        self.midi_modulation = 1
+        notes = [i for i in [45, 47, 48, 50, 52, 53, 56, 57]]
+        # synth(channel, program, note, velocity, modulation)
+        self.synths = [synths.syn_Midi(n, self.midi_program, notes[n], self.midi_velocity, self.midi_modulation)
+                        for n in range(self.tube_count)]
+        self.tick = 0
+    
+    def load(self):
+    
+        # Set all pixels to black
+        black = np.array([0, 0, 0])               
+        self.current_colours = np.tile(black, (self.tube_count, self.tube_length, 1))
+        
+        # Load synth patch
+        for synth in self.synths:
+            synth.load_program()
+        
+    def update(self, distances):
+        
+        for tube, distance in enumerate(distances):
+            controller = self.synths[tube]      
+            
+            if distance > 0:                
+                # Update synths
+                #
+                # Set modulation and ensure sound playing
+                controller.modulate(int(min(distance * self.midi_ratio, 127)))
+                if not controller.playing:
+                    controller.start()                
+                
+            else:
+                # Stop the synth
+                if controller.playing:
+                    controller.stop()          
         return self.current_colours
         
 class prog_Sarah:
+    # Colours taken from artwork
     #COLOURS = [[114, 238, 88], [151, 250, 119], [197, 250, 143], [223, 255, 210], [189, 217, 214], [195, 210, 254], [95, 132, 198], [67, 89, 168]]
     COLOURS = [[112, 241, 90], [151, 250, 119], [171, 250, 130], [210, 255, 145], [205, 240, 175], [199, 224, 200], [160, 216, 189], [148, 200, 161]]
     mysynths = []
