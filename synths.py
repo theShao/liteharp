@@ -179,29 +179,32 @@ class syn_Organdonor():
      
 class syn_Midi():
     
-    def __init__(self, channel, note):
+    def __init__(self, channel, program, note, velocity, modulation):        
         self.channel = channel
         self.note = note
-        
-        midiout.send_message([PROGRAM_CHANGE + channel, 15])
-        
-        self.note_on = [NOTE_ON + channel, note, 112]  # channel 1, middle C, velocity 112
-        self.note_off = [NOTE_OFF + channel, note, 0]        
+        self.modulation = modulation
+        self.note_on = [NOTE_ON + channel, note, velocity]
+        self.note_off = [NOTE_OFF + channel, note, 0]
+        self.midi_program = program
+    
+    def load_program(self):
         self.playing = False
+        midiout.send_message([PROGRAM_CHANGE + self.channel, self.midi_program])
+        print([PROGRAM_CHANGE + self.channel, self.midi_program])
     
     def modulate(self, value): # Input range 0 - 127
-        modulate = [CONTROL_CHANGE  + self.channel, 1, value]
+        modulate = [CONTROL_CHANGE  + self.channel, self.modulation, value]
         print(modulate)
         midiout.send_message(modulate)
         
     def start(self):
+        self.playing = True
         print(self.note_on)
         midiout.send_message(self.note_on)
-        self.playing = True
         
     def stop(self):
-        midiout.send_message(self.note_off)
         self.playing = False
+        midiout.send_message(self.note_off)
     
     def end(self):
         pass   

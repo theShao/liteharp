@@ -86,6 +86,7 @@ myprograms = [program(TUBE_COUNT, PIXELS_PER_TUBE - PIXEL_OFFSET)
             and name[:5] == "test_"]
 program_cycle = itertools.cycle(myprograms) # Loop through them forever
 current_program = next(program_cycle)
+current_program.load()
 
 # Ask the program for first frame
 print("Set initial colours:")
@@ -99,6 +100,7 @@ while True:
     if not GPIO.input(26):
         # Button pressed
         current_program = next(program_cycle)
+        current_program.load()
         frame = current_program.update([0,0,0,0,0,0,0,0])
         updatepixels(frame)
         time.sleep(0.5) # We could debounce the button press or we could just wait...  	
@@ -109,7 +111,7 @@ while True:
     distances = []
     last_time = this_time
     this_time = time.time()
-    #print("Loop ms: %f" % ((this_time - last_time) * 1000))    
+    print("Loop ms: %f" % ((this_time - last_time) * 1000))    
     
     # Sensor work
     t0 = time.time()
@@ -128,19 +130,19 @@ while True:
             pixel_dist = 0            
         distances.append(pixel_dist)
     t1 = time.time()
-    #print("Lidar time: %f "% (t1 - t0))        
+    print("Lidar time: %f "% (t1 - t0))        
     
     # Program work
     t0 = time.time()
     frame = current_program.update(distances)
     t1 = time.time()
-    #print("Program time: ", t1 - t0)
+    print("Program time: ", t1 - t0)
     
     # Neopixel work
     t0 = time.time()    
     updatepixels(frame)
     t1 = time.time()
-    #print("Pixel time: ", t1 - t0)
+    print("Pixel time: ", t1 - t0)
     
     time.sleep(0.001)
     
