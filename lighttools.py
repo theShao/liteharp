@@ -77,59 +77,6 @@ def sinebow(count = 100, brightness = 255):
         b = np.sin(np.pi * (i + 2./3))        
         out.append([int(brightness*chan**2) for chan in (r, g, b)])
     return(out)
-    def __init__(self, n = 144):
-
-        # Makes Sarah's rainbow with blocks of 11 leds of a colour
-        # [(255, 0, 0), (255, 128, 0), (255, 255, 0), (2, 255, 0), (0, 255, 255), (0, 0, 255), (128, 0, 255), (255, 0, 128)]
-        # and transitions over 8 pixess to the next block
-        # this is hopelessly specific, I might as well have just prepopulated a list...
-        # 
-        # colours: list of colours as 24-bit
-        # rgbs: list of colours as [r, g, b] ndarrays
-        # n: number of points to return colours over        
-        #
-        self.n = n
-        colours = []
-        rgbs = []
-        r, g, b = 255, 0, 0
-        colour_px, step_px = 11, 8    
-        transitions = [(0, 16, 0), (0, 15, 0), (-31, 0 , 0), (0, 0 , 31), 
-                       (0, -31, 0), (15, 0, 0), (16, 0, -16)]
-
-        for i in range(len(transitions)): #Notes
-            r1, g1, b1 = transitions[i]
-            for j in range(colour_px):
-                rgbs.append(np.array([r, g, b]))
-                colours.append(Color(r, g, b))
-            for j in range(step_px):
-                r += r1
-                g += g1
-                b += b1
-                rgbs.append(np.array([r, g, b]))
-                colours.append(Color(r, g, b))
-    
-        # and the final colour also held
-        for j in range(colour_px):
-                rgbs.append(np.array([r, g, b]))
-                colours.append(Color(r, g, b))
-
-        self.colours = colours
-        """
-        for rgb in rgbs:
-            runs = 2            
-            for run in runs:
-        """
-            
-
-
-        self.rgbs = rgbs
-
-    def getColour(self, i):        
-        return self.colours[i]
-
-    def getRGB(self, i):
-        # Returns a numpy array [r, g, b]
-        return self.rgbs[int(i * 144/self.n)]
 
 def whitelight(strip, mags):
     for i in range(len(strip.numPixels())):

@@ -83,7 +83,7 @@ print("Initializing programs")
 myprograms = [program(TUBE_COUNT, PIXELS_PER_TUBE - PIXEL_OFFSET) 
             for name, program in inspect.getmembers(programs) 
             if inspect.isclass(program)
-            and name[:5] == "test_"]
+            and name[:5] == "live_"]
 program_cycle = itertools.cycle(myprograms) # Loop through them forever
 current_program = next(program_cycle)
 current_program.load()
