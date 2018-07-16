@@ -41,7 +41,7 @@ def init(devices):
         #port.write(TFMINI_SHORT_DISTANCE_MODE) # Serial mode (instead of pix, which sends text not bytes)
         #time.sleep(0.1)
         #port.write(TFMINI_EXIT_CONFIG) # Exit config mode
-        #time.sleep(0.1)
+        time.sleep(0.1)
         
         print("%s initialised" % device)
 

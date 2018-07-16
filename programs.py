@@ -9,7 +9,7 @@
 #       update(distances)
 #       end
 import synths, lighttools
-import random
+import random, colorsys
 import numpy as np
 
 class template:
@@ -56,7 +56,10 @@ class template:
                     controller.stop()          
         return self.current_colours
 
-class live_Bubbles:        
+class live_Bubbles:
+    min_bubble_speed = 1        
+    max_bubble_speed = 2
+    bubble_probability = 500 # Inverse of liklihood of a new bubble being made
     # Sound properties
     def __init__(self, tube_count, led_per_tube):
         self.tube_length = led_per_tube
@@ -67,9 +70,12 @@ class live_Bubbles:
         self.midi_program = 0
         self.midi_modulation = 1
         self.midi_velocity = 112
-        self.colour_cycle_speed = 0
+        self.min_bubble_speed = 1        
+        self.max_bubble_speed = 2
+        self.bubble_probability = 500 # Inverse of liklihood of a new bubble being made
+        
 
-        notes = [45, 47, 48, 50, 52, 53, 56, 57]
+        notes = [45, 47, 49, 50, 52, 54, 56, 57]
         # synth(channel, program, note, velocity, modulation)
         self.synths = [synths.syn_Midi(n, self.midi_program, notes[n], self.midi_velocity, self.midi_modulation)
                         for n in range(self.tube_count)]  
@@ -143,8 +149,8 @@ class live_Bubbles:
                         distance = self.auto_bubbles[tube][0]
                 else:
                     # Maybe make a new bubble
-                    if random.randint(0, 1000) == 0:
-                        self.auto_bubbles[tube] = [1, random.randint(1, 3)]     
+                    if random.randint(0, self.bubble_probability) == 0:
+                        self.auto_bubbles[tube] = [1, random.randint(self.min_bubble_speed, self.max_bubble_speed)]     
             
             if distance > 0:                
                 # Update synths
@@ -345,19 +351,19 @@ class live_Rainbow:
     # Sound properties
     def __init__(self, tube_count, led_per_tube):
         self.tubelength = led_per_tube
+        self.tube_count = tube_count
         #self.base_colours = np.tile(np.array(lighttools.BLUE), (tube_count, led_per_tube, 1)) #.astype(np.uint8) # Default colour for each pixel        
         self.base_colours = np.tile(np.array(lighttools.sinebow(led_per_tube, 180)), (tube_count, 1, 1)) #.astype(np.uint8) # Default colour for each pixel        
         #self.base_colours /= 2 # Soften the colours a bit.
         self.current_colours = self.base_colours.copy() # Initial colours match base colours
-        self.mysynths = []
         self.midi_program = 3
         self.midi_modulation = 1
         self.midi_velocity = 112
         
         notes = [45, 47, 48, 50, 52, 53, 56, 57]
         # synth(channel, program, note, velocity, modulation)
-        self.synths = [synths.syn_Midi(n, self.midi_program, notes[n+12], self.midi_velocity, self.midi_modulation)
-                        for n in range(self.tube_count)]          
+        self.synths = [synths.syn_Midi(n, self.midi_program, notes[n]+12, self.midi_velocity, self.midi_modulation)
+                        for n in range(tube_count)]          
 
     def load(self):
         for synth in self.synths:
@@ -367,7 +373,7 @@ class live_Rainbow:
         # Decay
         self.current_colours = lighttools.fade(self.current_colours, self.base_colours, 10)
         for tube, distance in enumerate(distances):
-            controller = self.mysynths[tube]
+            controller = self.synths[tube]
             if distance > 0:
                 
                 # Update synths
@@ -398,6 +404,16 @@ class live_Art:
         self.midi_modulation = 1
         self.colours = [[112, 241, 90], [151, 250, 119], [171, 250, 130], [210, 255, 145],
                         [205, 240, 175], [199, 224, 200], [160, 216, 189], [148, 200, 161]]
+                        
+        # numpy complementary_colours from https://stackoverflow.com/questions/40233986/python-is-there-a-function-or-formula-to-find-the-complementary-colour-of-a-rgb
+        lo = np.amin(self.colours, axis=1, keepdims=True)
+        hi = np.amax(self.colours, axis=1, keepdims=True)
+        self.complementary_colours = (lo + hi) - self.colours
+        '''
+        self.hsv_colours = [colorsys.rgb_to_hsv(c[1], c[0], c[2]) for c in self.colours]
+        self.complementary_colours = [colorsys.hsv_to_rgb((c[0]+0.5)%1, c[1], c[2]) for c in self.hsv_colours]
+        self.complementary_colours = [[c[1], c[0], c[2]] for c in self.complementary_colours] 
+        '''
         notes = [i for i in [45, 47, 48, 50, 52, 53, 56, 57]]
         # synth(channel, program, note, velocity, modulation)
         self.synths = [synths.syn_Midi(n, self.midi_program, notes[n], self.midi_velocity, self.midi_modulation)
@@ -426,7 +442,7 @@ class live_Art:
             
             if distance > 0:
                 # Light up 5 pixels at the detected position
-                self.current_colours[tube, distance-2:distance+2] = [64, 87, 168]
+                self.current_colours[tube, :distance+2] = self.complementary_colours[tube] #[64, 87, 168]
 
                 # Update synths
                 #
