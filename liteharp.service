@@ -1,0 +1,13 @@
+[Unit]
+Description=LightHarp
+After=network.target
+
+[Service]
+ExecStart=/usr/bin/python -u arrays.py
+WorkingDirectory=/home/pi/pyprojects/liteharp
+StandardOutput=inherit
+StandardError=inherit
+Restart=always
+
+[Install]
+WantedBy=multi-user.target

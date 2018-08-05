@@ -144,8 +144,9 @@ class live_Bubbles:
                     # Check if we've reached the top of the tube
                     if self.auto_bubbles[tube][0] >= self.tube_length:
                         self.auto_bubbles[tube][0] = 0
-
-                    distance = self.auto_bubbles[tube][0]
+                    else:
+                        # Fake the distance reading
+                        distance = self.auto_bubbles[tube][0]
                 else:
                     # Maybe make a new bubble
                     if random.randint(0, self.bubble_probability) == 0:
@@ -168,11 +169,6 @@ class live_Bubbles:
                     controller.stop()
 
         return self.current_colours
-
-    def stop(self):
-        for synth in self.synths:
-            synth.stop()
-
 
 class live_Sparkles:    
     
@@ -261,10 +257,6 @@ class live_Sparkles:
                     circle[2] = radius
         #print(self.circles)        
         return self.current_colours        
-
-    def stop(self):
-        for synth in self.synths:
-            synth.stop()
         
 class live_Fire:    
     # Loop speed as of 31/03 ~15ms
@@ -281,7 +273,7 @@ class live_Fire:
         self.midi_velocity = 112
         self.midi_modulation = 1
         self.auto_play = True
-        notes = [i for i in [45, 47, 48, 50, 52, 53, 55, 57]]
+        notes = [i for i in [45, 47, 49, 50, 52, 54, 56, 57]]
         # synth(channel, program, note, velocity, modulation)
         self.synths = [synths.syn_Midi(n, self.midi_program, notes[n], self.midi_velocity, self.midi_modulation)
                         for n in range(self.tube_count)]
@@ -354,10 +346,6 @@ class live_Fire:
             
         return self.current_colours
 
-    def stop(self):
-        for synth in self.synths:
-            synth.stop()
-
 class live_Rainbow:
     mysynths = []
     # Sound properties
@@ -404,10 +392,6 @@ class live_Rainbow:
                 if controller.playing:
                     controller.stop()
         return self.current_colours
-
-    def stop(self):
-        for synth in self.synths:
-            synth.stop()
     
 class live_Lazers:    
     min_bubble_speed = 1        
@@ -428,7 +412,7 @@ class live_Lazers:
         self.bubble_probability = 2000 # Inverse of liklihood of a new bubble being made
         
 
-        notes = [45, 47, 48, 51, 52, 53, 56, 57]
+        notes = [45, 47, 49, 50, 52, 54, 56, 57]
         # synth(channel, program, note, velocity, modulation)
         self.synths = [synths.syn_Midi(n, self.midi_program, notes[n], self.midi_velocity, self.midi_modulation)
                         for n in range(self.tube_count)]  
@@ -524,10 +508,8 @@ class live_Lazers:
                     controller.stop()
 
         return self.current_colours
+  
 
-    def stop(self):
-        for synth in self.synths:
-            synth.stop()
 	
 class test_Art:    
     

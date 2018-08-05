@@ -100,7 +100,6 @@ while True:
     # Check fur button press
     if not GPIO.input(26):
         # Button pressed
-        current_program.stop()
         current_program = next(program_cycle)
         current_program.load()
         frame = current_program.update([0,0,0,0,0,0,0,0])

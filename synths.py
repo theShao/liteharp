@@ -60,7 +60,9 @@ class syn_Midi():
     def load_program(self):
         self.playing = False
         midiout.send_message([ALL_NOTES_OFF + self.channel, 0])
-        midiout.send_message([PROGRAM_CHANGE + self.channel, self.midi_program])        
+        midiout.send_message([PROGRAM_CHANGE + self.channel, self.midi_program])
+        time.sleep(0.05)
+        midiout.send_message([ALL_NOTES_OFF + self.channel, 0])
         print([PROGRAM_CHANGE + self.channel, self.midi_program])
     
     def modulate(self, value): # Input range 0 - 127

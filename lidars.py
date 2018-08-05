@@ -37,9 +37,11 @@ def init(devices):
         #port.write("\x42\x57\x02\x00\x00\x00\x06\x08") # Set baud rate - penultimate byte 0x06=115200, 0x00=9600
         #time.sleep(0.1)
         #port.write(TFMINI_SET_UNITS_MM) # Set to read in mm
-        #time.sleep(0.1)
-        #port.write(TFMINI_SHORT_DISTANCE_MODE) # Serial mode (instead of pix, which sends text not bytes)
-        #time.sleep(0.1)
+        #time.sleep(0.2)
+        #port.write(TFMINI_MANUAL_DISTANCE_MODE) #
+        #time.sleep(0.2)
+        #port.write(TFMINI_SHORT_DISTANCE_MODE) #
+        #time.sleep(0.2)
         #port.write(TFMINI_EXIT_CONFIG) # Exit config mode
         time.sleep(0.1)
         
@@ -94,18 +96,18 @@ def get_reading(portnumber):
 
 if __name__ == "__main__":
 
-    init(devices = ["/dev/ttyUSB" + str(i) for i in range(8)]) # ttyUSB0 --> ttyUSB8)
+    init(devices = ["/dev/tty-U" + str(i) for i in range(8)]) # ttyUSB0 --> ttyUSB8)
 
-    #stdscr = curses.initscr()
+    stdscr = curses.initscr()
     
     #try:
     while True:        
         for portnumber, _ in enumerate(ports):
             distance, strength, quality, reserved = get_reading(portnumber)
-            print("Laser: %d Dist: %d Strength: %d Quality: %d Reserved: %d" %(portnumber, distance, strength, quality, reserved))
-            #stdscr.addstr(portnumber, 0, "Laser: %d Dist: %d Strength: %d Quality: %d Reserved: %d" %(portnumber, distance, strength, quality, reserved))
+            #print("Laser: %d Dist: %d Strength: %d Quality: %d Reserved: %d" %(portnumber, distance, strength, quality, reserved))
+            stdscr.addstr(portnumber, 0, "Laser: %d Dist: %d Strength: %d Quality: %d Reserved: %d" %(portnumber, distance, strength, quality, reserved))
             time.sleep(0.02)
-            #stdscr.refresh()
+            stdscr.refresh()
     #except: # Exception as e:
         # print(e.message)
         # Fix console after curses
