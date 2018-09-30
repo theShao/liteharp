@@ -7,8 +7,7 @@
 from __future__ import print_function
 
 import numpy as np
-import sc
-import neopixel, lighttools, lidars, synths, programs
+import neopixel, lighttools, lidars, programs
 import threading, itertools, time, inspect
 import RPi.GPIO as GPIO
 
@@ -42,11 +41,12 @@ VOLUME = 0.5 # Passed to scsynth, 0 -> 1
 PIXEL_COUNT = TUBE_COUNT * PIXELS_PER_TUBE
 PIXELS_PER_MM = float(PIXELS_PER_TUBE) / TUBE_LENGTH
 PIXEL_OFFSET = int((MIN_DIST - SENSOR_OFFSET) * PIXELS_PER_MM) # First pixel that's inside the sensor range
-MAX_DIST = 1350 #TUBE_LENGTH + SENSOR_OFFSET
+MAX_DIST = 1350 #TUBE_LENGTH + SENSOR_OFFSET tweaked based on real-world results.
+
 # INIT
 
 # Sensor setup
-DEVSTRINGS = ["/dev/tty-U" + str(i) for i in range(TUBE_COUNT)] # ttyUSB0 --> ttyUSBn
+DEVSTRINGS = ["/dev/tty-U" + str(i) for i in range(TUBE_COUNT)] # ttyU0 --> ttyUn
 lidars.init(DEVSTRINGS)
 
 # LED strip setup
@@ -56,30 +56,27 @@ strip.begin()
 print("LED Strip running")
 
 def updatepixels(colours):
-    if INVERT_PIXELS:
-        if INVERT_SENSORS:
+    if INVERT_PIXELS: # Pixels are physically indexed top to bottom
+        if INVERT_SENSORS: # Sensors are located at the top
             colours = np.flip(colours, 1)
             colours = np.pad(colours, [(0, 0), (PIXEL_OFFSET, 0), (0, 0)], mode='constant')
-        else:
+        else: # Sensors are physically located at the bottom
             colours = np.flip(colours, 1)
             colours = np.pad(colours, [(0, 0), (0, PIXEL_OFFSET), (0, 0)], mode='constant')
-    else:
+    else: # Pixels are physically indexed bottom to top
         if INVERT_SENSORS:
             colours = np.pad(colours, [(0, 0), (0, PIXEL_OFFSET), (0, 0)], mode='constant')
         else:
             colours = np.pad(colours, [(0, 0), (PIXEL_OFFSET, 0), (0, 0)], mode='constant')
     
-    #print(colours)
     pixels = colours.reshape(-1, 3) # Flatten
     
     for i, pixel in enumerate(pixels):
         strip.setPixelColor(i, lighttools.np_array_to_colour(pixel))
     strip.show()
 
-# Supercolider setup
-#sc.start( verbose=1, spew=1)
-
-# Find and initialize all the classes in the programs module
+    
+# Find and initialize all the classes in the programs module that are "live"
 print("Initializing programs")
 myprograms = [program(TUBE_COUNT, PIXELS_PER_TUBE - PIXEL_OFFSET) 
             for name, program in inspect.getmembers(programs) 

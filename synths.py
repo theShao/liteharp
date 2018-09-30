@@ -1,4 +1,4 @@
-import sc, time
+import time
 from rtmidi.midiutil import open_midioutput
 from rtmidi.midiconstants import NOTE_OFF, NOTE_ON, CONTROL_CHANGE, PROGRAM_CHANGE, ALL_NOTES_OFF
 
@@ -8,45 +8,7 @@ try:
     midiout, port_name = open_midioutput(2, 1)
 except (EOFError, KeyboardInterrupt):
     sys.exit()
-    # arg out = 0, pan = 0.0, freq = 440, amp = 0.1, gate = 1,
-    # att = 0.01, dec = 0.5, sus = 1, rel = 0.5
-    # lforate = 10, lfowidth = 0.01, cutoff = 100, rq = 0.5;
-    
-    min = 500 # min cutoff
-    
-    def __init__(self, freq):
-        path = "organdonor"
-        synth = sc.Synth(path, 3000 + freq)
-        synth.amp = 0.7
-        synth.lforate = 1
-        synth.lfowidth = 0
-        synth.cutoff = 6000
-        synth.gate = 0
-        synth.run(1)
-        synth.rq = 0.1
-        synth.rel = 1
-        synth.freq = freq # * 2    
-        self.synth = synth        
-        self.playing = False
-    
-    def modulate(self, value): # Input range 0 - 1000
-        self.synth.lforate = (value/8.)
-        self.synth.lfowidth = value/10000.
-        self.synth.cutoff = value * 50.
-        
-    def start(self):
-        self.synth.run(1)
-        self.synth.gate = 1
-        self.playing = True
-        
-    def stop(self):
-        self.synth.gate = 0
-        #self.synth.run(0)
-        self.playing = False
-    
-    def end(self):
-        self.synth.run(0)
-     
+
 class syn_Midi():
     
     def __init__(self, channel, program, note, velocity, modulation):        

@@ -55,6 +55,10 @@ class template:
                 if controller.playing:
                     controller.stop()          
         return self.current_colours
+        
+    def stop(self):
+        for synth in self.synths:
+            synth.stop()
 
 class live_Bubbles:
     min_bubble_speed = 1        
