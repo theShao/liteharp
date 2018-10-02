@@ -1,0 +1,27 @@
+Physical construction/parts
+===========================
+WS2812b LED strips (neopixels). Mine uses 8 * 70 LED strips of 60LED/m joined end-to-end. Future versions will drive LEDs in parrallel as this is the slowest part, there's an 8-channel hardware interface available.
+Raspberry pi with 8 usb-serial adapters. I use CH240G adapters at around £3 each - these have the advantage of being able to power the LIDARs. Use UDEV rules to get consistent names for the individual adapters
+2 powered 4-port USB hubs
+8 * Benewake TFMini lidars
+Intel NUC i3 or better with external hardwre sound running 8 VST synths on midi channels 1 through 8
+USB midi out on the raspbery pi connected to a USB midi in on the Intel NUC
+Amp and speakers running from the NUC sound card.
+
+
+Dependencies and ting
+=====================
+The fantastic rpi-WS281x library originally by jgarff https://github.com/jgarff/rpi_ws281x
+rtimidi
+numpy
+
+Files
+=====
+arrays.py - main logic. Initialises hardware, interates through programs and passes distance reading to the active program
+programs.py - Individual programs - these take a list of sensor readings, start, stop and modulate the midi synths and return a list of colours to be applied to the LEDs
+lidars.py - driver/manager for multiple TFMini Lidar sensors. Initialises and manages the sensors conneted to each of a list of devstrings passed to it.
+synths.py - just a wrapper for the useful functions of RTMidi at this stage - used to also wrap other soft-synths.
+lighttools.py - some useful classes and functions for creating and blending GBR colours and managing a strip of NeoPixels. Also some legacy nonsense.
+
+blackbodycsv - black body radiation values.
+
