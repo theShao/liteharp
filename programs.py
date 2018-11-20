@@ -366,15 +366,21 @@ class live_Rainbow:
     mysynths = []
     # Sound properties
     def __init__(self, tube_count, led_per_tube):
-        self.tubelength = led_per_tube
+        self.tube_length = led_per_tube
         self.tube_count = tube_count
         #self.base_colours = np.tile(np.array(lighttools.BLUE), (tube_count, led_per_tube, 1)) #.astype(np.uint8) # Default colour for each pixel        
-        self.base_colours = np.tile(np.array(lighttools.sinebow(led_per_tube, 180)), (tube_count, 1, 1)) #.astype(np.uint8) # Default colour for each pixel        
+        self.base_colours = np.tile(np.array(lighttools.sinebow(led_per_tube, 180)), (tube_count, 1, 1)) #.astype(np.uint8) # Default colour for each pixel
+        for tube in range(self.tube_count):
+            self.base_colours[tube] = np.roll(self.base_colours[tube], 10 * tube, axis=0)
         #self.base_colours /= 2 # Soften the colours a bit.
         self.current_colours = self.base_colours.copy() # Initial colours match base colours
         self.midi_program = 3
         self.midi_modulation = 1
         self.midi_velocity = 112
+        
+        self.min_bubble_speed = 1        
+        self.max_bubble_speed = 1
+        self.bubble_probability = 3000 # Inverse of liklihood of a new bubble being made
         
         notes = [45, 47, 48, 50, 52, 53, 56, 57]
         # synth(channel, program, note, velocity, modulation)
@@ -382,14 +388,75 @@ class live_Rainbow:
                         for n in range(tube_count)]          
 
     def load(self):
+        self.auto_ticks = [random.randint(0, 9) for _ in range(self.tube_count)]
+        self.auto_directions = [random.choice([1]) for _ in range(self.tube_count)]
+        self.auto_bubbles = [[0, 0] for _ in range(self.tube_count)]
+        self.auto_play = True
+        self.idle_count = 0    
         for synth in self.synths:
             synth.load_program()        
     
     def update(self, distances):
+    
+        if distances == [0] * self.tube_count:
+            self.idle_count += 1
+            if self.idle_count >= 100:
+                self.auto_play = True
+                self.idle_count = 0
+        else:
+            self.auto_bubbles = [[0, 0] for _ in range(self.tube_count)]
+            self.idle_count = 0
+            self.auto_play = False
         # Decay
         self.current_colours = lighttools.fade(self.current_colours, self.base_colours, 10)
+        
         for tube, distance in enumerate(distances):
             controller = self.synths[tube]
+            controller = self.synths[tube]
+            #
+            # Update the timer
+            #
+            self.auto_ticks[tube] += 1
+            if self.auto_ticks[tube] > 100:
+                self.auto_ticks[tube] = 1
+            
+            #
+            # Update the background
+            #            
+            if self.auto_ticks[tube] % 10 == 0:
+                # Maybe change direction of background
+                #self.auto_directions[tube] = random.choice([-1, 1])
+                self.auto_ticks[tube] = 0
+            
+            if self.auto_ticks[tube] % 1 == 0:                
+                # Fade from the previous frame to where the background was for previous frame
+                self.current_colours[tube] = lighttools.fade(self.current_colours[tube], self.base_colours[tube], 5)
+                # Roll the background pixels for reference
+                self.base_colours[tube] = np.roll(self.base_colours[tube], self.auto_directions[tube], axis=0)
+                # Roll all pixels one place
+                self.current_colours[tube] = np.roll(self.current_colours[tube], self.auto_directions[tube], axis=0)
+                     
+            
+            if self.auto_play:
+                # Run bubbles if present
+                # bubble: list[position, speed]
+				
+				if self.auto_bubbles[tube][0] > 0:                    
+					# Move the bubble up the tube
+					if self.auto_ticks[tube] % 2 == 0:
+						self.auto_bubbles[tube][0] += self.auto_bubbles[tube][1]
+
+						# Check if we've reached the top of the tube
+						if self.auto_bubbles[tube][0] >= self.tube_length - 1:
+							# reverse direction
+							self.auto_bubbles[tube][1] = 0 - random.randint(self.min_bubble_speed, self.max_bubble_speed)
+					# Fake the distance reading
+					distance = self.auto_bubbles[tube][0]
+				else:
+					# Maybe make a new bubble
+					if random.randint(0, self.bubble_probability) == 0:
+						self.auto_bubbles[tube] = [1, random.randint(self.min_bubble_speed, self.max_bubble_speed)]     
+
             if distance > 0:
                 
                 # Update synths
@@ -413,10 +480,7 @@ class live_Rainbow:
         for synth in self.synths:
             synth.stop()
     
-class live_Lazers:    
-    min_bubble_speed = 1        
-    max_bubble_speed = 2
-    bubble_probability = 500 # Inverse of liklihood of a new bubble being made
+class live_Lazers:
     # Sound properties
     def __init__(self, tube_count, led_per_tube):
         self.tube_length = led_per_tube

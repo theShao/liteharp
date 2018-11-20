@@ -24,13 +24,7 @@ ports = []
 def init(devices):
     for device in devices:
         print("Starting serial on device: %s" % device)
-        for i in range(5):
-            try:
-                port = serial.Serial(device, baudrate=115200, timeout=0.5)
-                break
-            except Exception as e:
-                print(e)
-                time.sleep(0.1)
+        port = serial.Serial(device, baudrate=115200, timeout=0.5)
         ports.append(port)  
         port.flushInput()
         
